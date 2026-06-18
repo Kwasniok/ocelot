@@ -72,15 +72,15 @@ class PhysProc:
 
 class EmptyProc(PhysProc):
     def __init__(self, step=1):
-        PhysProc.__init__(self, step)
+        super().__init__(step)
         self.energy = None
         self.pict_debug = True
         self.traj_step = 0.0002
 
 
 class SaveBeam(PhysProc):
-    def __init__(self, filename):
-        PhysProc.__init__(self)
+    def __init__(self, filename, step=1):
+        super().__init__(step)
         self.energy = None
         self.filename = filename
 
@@ -92,8 +92,8 @@ class SaveBeam(PhysProc):
 class CopyBeam(PhysProc):
     """Physics process that copies the ParticleArray instance when applied.  Makes
     most sense to be attached to zero-length elements (e.g. Marker instances)."""
-    def __init__(self, name: str = ""):
-        super().__init__()
+    def __init__(self, name: str = "", step=1):
+        super().__init__(step)
         self.name = name
         self.parray = None
 

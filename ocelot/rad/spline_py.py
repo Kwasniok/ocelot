@@ -1,9 +1,17 @@
+"""Legacy cubic-spline coefficient and interpolation utilities."""
+
 __author__ = 'Sergey Tomin'
 
 import numpy as np
 
+try:
+    import numba as nb
+except ImportError:
+    nb = None
+
 
 def derivat(x, y):
+    """Estimate the first derivative at both ends of a sampled curve."""
 
     N=len(x)-1
     deriv1 = 0.
@@ -35,6 +43,11 @@ def derivat(x, y):
 
 
 def moment(x, y):
+    """Return cubic-spline moments, i.e. second derivatives at input nodes.
+
+    These moments are the intermediate values used by :func:`cspline_coef`.
+    They are not themselves the interval polynomial coefficients.
+    """
 
     n = len(x)
     N =len(x)-1
@@ -75,8 +88,65 @@ def moment(x, y):
     return M
 
 
+if nb is not None:
+    _derivat_numba = nb.njit(cache=True)(derivat)
+
+    @nb.njit(cache=True)
+    def moment_numba(x, y):
+        """Return spline moments using the algorithm from :func:`moment`."""
+        n = len(x)
+        n_intervals = n - 1
+        alpha = np.zeros(n)
+        beta = np.zeros(n)
+        rhs = np.zeros(n)
+        h0 = x[1] - x[0]
+        derivative_start, derivative_end = _derivat_numba(x, y)
+
+        first_rhs = 6.0 * ((y[1] - y[0]) / h0 - derivative_start)
+        rhs[0] = first_rhs
+        alpha[1] = -0.5
+        beta[1] = first_rhs / (2.0 * h0)
+
+        for i in range(1, n_intervals):
+            h1 = x[i + 1] - x[i]
+            rhs[i] = 6.0 * (
+                (y[i + 1] - y[i]) / h1
+                - (y[i] - y[i - 1]) / h0
+            )
+            denominator = h0 * alpha[i] + 2.0 * (h1 + h0)
+            alpha[i + 1] = -h1 / denominator
+            beta[i + 1] = (rhs[i] - h0 * beta[i]) / denominator
+            h0 = h1
+
+        rhs[n_intervals] = 6.0 * (
+            derivative_end
+            - (y[n_intervals] - y[n_intervals - 1]) / h0
+        )
+        moments = np.zeros(n)
+        moments[n_intervals] = (
+            rhs[n_intervals] - h0 * beta[n_intervals]
+        ) / (h0 * alpha[n_intervals] + 2.0 * h0)
+
+        for i in range(n_intervals - 1, -1, -1):
+            moments[i] = (
+                alpha[i + 1] * moments[i + 1] + beta[i + 1]
+            )
+
+        return moments
+
+else:
+    moment_numba = None
+
+
 
 def cspline_coef(x, y):
+    """Construct cubic coefficients for each interval.
+
+    Returns arrays ``a, b, c, d, z`` such that interval ``i`` is represented
+    by ``a[i] * dx**3 + b[i] * dx**2 + c[i] * dx + d[i]``, where
+    ``dx = x_new - z[i]``. The coefficients are derived from the nodal
+    second derivatives returned by :func:`moment`.
+    """
     n = len(x)
     #N = len(arZ) - 1
     a = np.zeros(n-1)

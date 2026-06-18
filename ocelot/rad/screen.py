@@ -110,6 +110,9 @@ class Screen:
         the method recalculates the field phase and electrical fields to obtain the correct values that can be used
         to propagate the wave front.
 
+        Field values are updated in place so the component arrays remain views
+        of ``memory_screen``.
+
         :param x0: initial the electron coordinate
         :param y0: initial the electron coordinate
         :param z0: initial the electron coordinate
@@ -126,7 +129,7 @@ class Screen:
         prXconst = Xscr - x0
         prYconst = Yscr - y0
         phaseConstIn = np.pi * Erad / hc * (prXconst * prXconst + prYconst * prYconst) / (self.Distance - z0)
-        phaseConstIn = phaseConstIn.flatten()
+        phaseConstIn = phaseConstIn.reshape(-1)
         self.arPhase += phaseConstIn
         cosf = np.cos(phaseConstIn)
         sinf = np.sin(phaseConstIn)
@@ -134,10 +137,10 @@ class Screen:
         arImEx = self.arImEx * cosf + self.arReEx * sinf    # sum of sin
         arReEy = self.arReEy * cosf - self.arImEy * sinf    # sum of cos
         arImEy = self.arImEy * cosf + self.arReEy * sinf    # sum of sin
-        self.arReEx = arReEx
-        self.arImEx = arImEx
-        self.arReEy = arReEy
-        self.arImEy = arImEy
+        self.arReEx[:] = arReEx
+        self.arImEx[:] = arImEx
+        self.arReEy[:] = arReEy
+        self.arImEy[:] = arImEy
 
     def screen_to_emscreen(self, screen):
 
@@ -338,17 +341,19 @@ class Screen:
         self.Eph = np.linspace(self.e_start, self.e_start + self.e_step*(self.ne -1), self.ne)
 
     def coherent_photon_dist(self):
-        """
-        On the area ds during 1 sec falls dN photons in spectral width (dlambda/lambda)
-        dN = ds/Distance**2 * (dlambda/lambda) * (I/qe) * 3*alpha*gamma**2/(4*pi**2) * |Eul(lambda, Xscreen)|**2
-        Eul(lambda, Xscreen) is unitless electric field: Eul(lambda, Xscreen) = - (c/qe) * D/(sqrt(3)*gamma**2) * (E(lambda, Xscreen))
+        """Convert coherently summed fields to photons per bunch.
 
-        For coherent radiation calculation:
-        I = qe
-        dN = ds/Distance**2 * (dlambda/lambda) * 3*alpha/(4*pi**2) * |Eul(lambda, Xscreen) * gamma * n_e|**2
-        |Eul(lambda, Xscreen) * gamma * n_e| is calculated in function coherent_radiation()
+        The field arrays have already been weighted in
+        :func:`ocelot.rad.radiation_py.coherent_radiation` by the number of
+        electrons represented by each macroparticle and by the segment Lorentz
+        factor. The resulting ``Sigma``, ``Pi``, and ``Total`` arrays are
+        photon densities per passage of the supplied bunch, per square
+        millimetre, and per ``10**-3`` relative bandwidth.
 
-        :return:
+        The factor ``1e-3`` below represents
+        ``delta_E / E = abs(delta_lambda) / lambda = 10**-3``. No repetition
+        rate is applied here. Multiply the result by the bunch repetition rate
+        in hertz to obtain photons per second.
         """
 
         LenPntrConst = self.Distance - self.Zstart
@@ -440,4 +445,3 @@ def sum_screens(screen_down, screen_up):
 
     screen.arPhase = screen_down.arPhase + screen_up.arPhase
     return screen
-
