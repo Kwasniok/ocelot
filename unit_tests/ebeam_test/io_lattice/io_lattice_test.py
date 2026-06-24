@@ -207,10 +207,12 @@ def test_lat2input(lattice, tws0, method, parameter, update_ref_values=False):
         assert check_result(['Exception error during the lattice file execution, parameter is ' + str(parameter)])
 
     if parameter:
-        if "tws0" in loc_dict:
+        if "twiss0" in loc_dict:
+            tws0_new = loc_dict['twiss0']
+        elif "tws0" in loc_dict:
             tws0_new = loc_dict['tws0']
         else:
-            assert check_result(['No tws0 in the lattice file, parameter is ' + str(parameter)])
+            assert check_result(['No twiss0 in the lattice file, parameter is ' + str(parameter)])
     else:
         tws0_new = tws0
 
@@ -223,6 +225,43 @@ def test_lat2input(lattice, tws0, method, parameter, update_ref_values=False):
         assert check_result(['No cell variable in the lattice file, parameter is ' + str(parameter)])
     
         
+def test_lat2input_accepts_twiss0(lattice, tws0):
+    """lat2input writes initial Twiss parameters as twiss0."""
+
+    lines = ''.join(LatticeIO.lat2input(lattice, twiss0=tws0))
+
+    assert "twiss0 = Twiss()" in lines
+    assert "tws0 = Twiss()" not in lines
+
+
+def test_lat2input_accepts_legacy_tws0_keyword(lattice, tws0):
+    """lat2input accepts the old tws0 keyword for compatibility."""
+
+    lines = ''.join(LatticeIO.lat2input(lattice, tws0=tws0))
+
+    assert "twiss0 = Twiss()" in lines
+    assert "tws0 = Twiss()" not in lines
+
+
+def test_lat2input_rejects_conflicting_twiss_keywords(lattice, tws0):
+    """lat2input rejects ambiguous initial Twiss arguments."""
+
+    with pytest.raises(ValueError):
+        LatticeIO.lat2input(lattice, tws0=tws0, twiss0=Twiss())
+
+
+def test_save_as_py_file_accepts_legacy_tws0_keyword(lattice, tws0, tmp_path):
+    """save_as_py_file accepts the old tws0 keyword for compatibility."""
+
+    file_name = tmp_path / "lattice.py"
+
+    lattice.save_as_py_file(file_name=str(file_name), tws0=tws0, remove_rep_drifts=False)
+
+    lines = file_name.read_text()
+    assert "twiss0 = Twiss()" in lines
+    assert "tws0 = Twiss()" not in lines
+
+
 def lattice_new_transfer_map_check(lattice, tws0):
 
     r_matrix = lattice_transfer_map(lattice, tws0.E)

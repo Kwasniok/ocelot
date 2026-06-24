@@ -326,22 +326,25 @@ class MagneticLattice:
                 else:
                     self.sequence[i] = drifts[elem.l]
 
-    def save_as_py_file(self, file_name: str, tws0=None, remove_rep_drifts=True, power_supply=False):
+    def save_as_py_file(self, file_name: str, twiss0=None, remove_rep_drifts=True, power_supply=False, **kwargs):
         """
         Saves the lattice to a Python file.
 
         Args:
             file_name (str): The path and name of the Python file where the lattice will be stored.
-            tws0 (Twiss, optional): A `Twiss` object. If provided, the Twiss parameters will be printed at the beginning
-                of the lattice file. Defaults to `None`.
+            twiss0 (Twiss, optional): A `Twiss` object. If provided, the Twiss parameters will be printed at the
+                beginning of the lattice file as the variable ``twiss0``. Defaults to `None`.
             remove_rep_drifts (bool, optional): If `True`, removes repeated drift elements from the lattice.
                 Defaults to `True`.
             power_supply (bool, optional): If `True`, writes the power supply IDs into the file. Defaults to `False`.
+            **kwargs: Accepts the old keyword ``tws0`` for backward compatibility. Passing both ``twiss0`` and
+                ``tws0`` raises a `ValueError`. Any other keyword raises a `TypeError`.
 
         Returns:
             None
         """
-        LatticeIO.save_lattice(self, tws0=tws0, file_name=file_name, remove_rep_drifts=remove_rep_drifts,
+        twiss0 = LatticeIO._resolve_twiss0_alias(twiss0, kwargs, "save_as_py_file")
+        LatticeIO.save_lattice(self, twiss0=twiss0, file_name=file_name, remove_rep_drifts=remove_rep_drifts,
                                power_supply=power_supply)
 
     def transfer_maps(self, energy, output_at_each_step: bool = False, start: E = None,

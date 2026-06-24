@@ -13,16 +13,26 @@ class LatticeIO:
     """
 
     @staticmethod
-    def save_lattice(lattice, tws0=None, file_name="lattice.py", remove_rep_drifts=True, power_supply=False):
+    def save_lattice(lattice, twiss0=None, file_name="lattice.py", remove_rep_drifts=True, power_supply=False,
+                     **kwargs):
         """
-        saves lattice as python input file
-        file_name - name of the file
-        remove_rep_drifts - if True, remove the drifts with the same lengths from the lattice drifts definition
+        Save a lattice as a Python input file.
+
+        Args:
+            lattice (MagneticLattice): Input lattice.
+            twiss0 (Twiss, optional): Initial Twiss parameters to write at the beginning of the file.
+                The output variable is named ``twiss0``. The old keyword ``tws0`` is still accepted
+                through ``kwargs`` for backward compatibility. Passing both names raises a `ValueError`.
+            file_name (str): Name of the file to write.
+            remove_rep_drifts (bool): If ``True``, remove repeated drifts from the lattice drift definitions.
+            power_supply (bool): If ``True``, write power supply IDs into the file.
         """
+        twiss0 = LatticeIO._resolve_twiss0_alias(twiss0, kwargs, "save_lattice")
+
         if remove_rep_drifts:
             lattice.rem_drifts()
 
-        lines = LatticeIO.lat2input(lattice, tws0=tws0)
+        lines = LatticeIO.lat2input(lattice, twiss0=twiss0)
 
         if power_supply:
             lines = LatticeIO._write_power_supply_id(lattice, lines=lines)
@@ -67,18 +77,23 @@ class LatticeIO:
         return lines
 
     @staticmethod
-    def lat2input(lattice, tws0=None):
+    def lat2input(lattice, twiss0=None, **kwargs):
         """
         Generates a string, in a python readable format, that contains the lattice to store it in a python file.
         :param lattice: Input lattice
+        :param twiss0: Initial Twiss parameters. The output variable is named ``twiss0``.
+            The old keyword ``tws0`` is still accepted through ``kwargs`` for backward compatibility.
+            Passing both names raises a `ValueError`.
         :return: A string that contains the lattice in a python readable format
         """
+        twiss0 = LatticeIO._resolve_twiss0_alias(twiss0, kwargs, "lat2input")
+
         lines = ['from ocelot import * \n']
 
         # prepare initial Twiss parameters
-        if tws0 is not None and isinstance(tws0, Twiss):
+        if twiss0 is not None and isinstance(twiss0, Twiss):
             lines.append('\n#Initial Twiss parameters\n')
-            lines.extend(LatticeIO.twiss2input(tws0))
+            lines.extend(LatticeIO.twiss2input(twiss0))
 
         # prepare elements list
         lines.append('\n')
@@ -93,18 +108,35 @@ class LatticeIO:
         return lines
 
     @staticmethod
+    def _resolve_twiss0_alias(twiss0, kwargs, function_name):
+        if "tws0" in kwargs:
+            legacy_twiss0 = kwargs.pop("tws0")
+            if twiss0 is not None:
+                raise ValueError(f"{function_name} accepts either twiss0 or legacy tws0, not both.")
+            twiss0 = legacy_twiss0
+
+        if kwargs:
+            name = next(iter(kwargs))
+            raise TypeError(f"{function_name}() got an unexpected keyword argument '{name}'")
+
+        return twiss0
+
+    @staticmethod
     def twiss2input(twiss):
         """
-        Generates a string, in a python readable format, that contains the Twiss parameter to store it in a python file.
+        Generates Python input lines for Twiss parameters.
+
+        The output variable is named ``twiss0``.
+
         :param twiss: Input twiss
         :return: A string that contains Twiss parameter in a python readable format
         """
         lines = []
         tws_ref = Twiss()
-        lines.append('tws0 = Twiss()\n')
+        lines.append('twiss0 = Twiss()\n')
         for param in twiss.__dict__:
             if twiss.__dict__[param] != tws_ref.__dict__[param]:
-                lines.append('tws0.' + str(param) + ' = ' + str(twiss.__dict__[param]) + '\n')
+                lines.append('twiss0.' + str(param) + ' = ' + str(twiss.__dict__[param]) + '\n')
         return lines
 
     @staticmethod
