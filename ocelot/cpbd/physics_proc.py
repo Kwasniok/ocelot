@@ -72,7 +72,7 @@ class PhysProc:
 
 class EmptyProc(PhysProc):
     def __init__(self, step=1):
-        super().__init__(step)
+        super().__init__(step=step)
         self.energy = None
         self.pict_debug = True
         self.traj_step = 0.0002
@@ -80,7 +80,7 @@ class EmptyProc(PhysProc):
 
 class SaveBeam(PhysProc):
     def __init__(self, filename, step=1):
-        super().__init__(step)
+        super().__init__(step=step)
         self.energy = None
         self.filename = filename
 
@@ -93,7 +93,7 @@ class CopyBeam(PhysProc):
     """Physics process that copies the ParticleArray instance when applied.  Makes
     most sense to be attached to zero-length elements (e.g. Marker instances)."""
     def __init__(self, name: str = "", step=1):
-        super().__init__(step)
+        super().__init__(step=step)
         self.name = name
         self.parray = None
 
@@ -125,7 +125,7 @@ class SmoothBeam(PhysProc):
     """
 
     def __init__(self, mslice=1000):
-        PhysProc.__init__(self)
+        super().__init__()
         self.mslice = mslice
 
     def apply(self, p_array, dz):
@@ -169,7 +169,7 @@ class LaserModulator(PhysProc):
     def __init__(self, **kwargs):
         # Extract 'step' if provided, otherwise default to 1
         step = kwargs.pop('step', 1)
-        super().__init__(step)
+        super().__init__(step=step)
 
         # Pull out known parameters with defaults
         self.dE           = kwargs.pop('dE',           12500e-9)  # GeV
@@ -258,7 +258,7 @@ class LaserModulator(PhysProc):
 
 class LaserHeater(LaserModulator):
     def __init__(self, step=1):
-        LaserModulator.__init__(self, step)
+        super().__init__(step=step)
         _logger.info("LaserHeater physics process is obsolete. Use 'LaserModulator' instead.")
 
 
@@ -280,7 +280,7 @@ class PhaseSpaceAperture(PhysProc):
     """
 
     def __init__(self, step=1, **kwargs):
-        PhysProc.__init__(self, step)
+        super().__init__(step=step)
         self.longitudinal = kwargs.get("longitudinal", True)
         self.vertical = kwargs.get("vertical", False)
         self.horizontal = kwargs.get("horizontal", False)
@@ -336,7 +336,7 @@ class RectAperture(PhysProc):
     """
 
     def __init__(self, xmin=-np.inf, xmax=np.inf, ymin=-np.inf, ymax=np.inf, step=1):
-        PhysProc.__init__(self, step)
+        super().__init__(step=step)
         self.xmin = xmin  # in m
         self.xmax = xmax  # in m
 
@@ -368,7 +368,7 @@ class EllipticalAperture(PhysProc):
     """
 
     def __init__(self, xmax=np.inf, ymax=None, dx=0.0, dy=0.0, step=1):
-        PhysProc.__init__(self, step)
+        super().__init__(step=step)
         self.xmax = xmax
         self.ymax = (ymax if not ymax is None else xmax)
         self.dx = dx
@@ -396,7 +396,7 @@ class BeamTransform(PhysProc):
         :param bounds: [-5, 5] in tau-sigmas. Twiss parameters will be calculated for that part of the beam
         :param slice: None, if "Imax" or "Emax" beam matched to that slice and 'bound' param is ignored
         """
-        PhysProc.__init__(self)
+        super().__init__()
         self.tws = tws      # Twiss
         self.x_opt = x_opt  # [alpha, beta, mu (phase advance)] - obsolete
         self.y_opt = y_opt  # [alpha, beta, mu (phase advance)] - obsolete
@@ -437,7 +437,7 @@ class SlottedFoil(PhysProc):
     :param ymax: np.inf upper position of the foil slot [m]
     """
     def __init__(self, dx, X0, xmin=-np.inf, xmax=np.inf, ymin=-np.inf, ymax=np.inf, step=1):
-        PhysProc.__init__(self, step)
+        super().__init__(step=step)
         self.xmin = xmin  # in m
         self.xmax = xmax  # in m
 
@@ -501,7 +501,8 @@ class SpontanRadEffects(PhysProc):
         :param type: "planar"/"helical" undulator or "dipole"
         :param kwargs: Additional keyword arguments for customization
         """
-        super().__init__(**kwargs)  # Pass any extra arguments to the parent class
+        step = kwargs.pop("step", 1)
+        super().__init__(step=step)
 
         # Explicitly defined parameters
         self.K = K
@@ -566,7 +567,7 @@ class SpontanRadEffects(PhysProc):
 
 class BeamAnalysis(PhysProc):
     def __init__(self, filename):
-        PhysProc.__init__(self)
+        super().__init__()
         self.filename = filename
         self.lambda_mod = 1e-6
         self.nlambdas = 4  # +- nlambda for analysis
@@ -626,7 +627,7 @@ class Chicane(PhysProc):
     """
 
     def __init__(self, r56, t566=0.):
-        PhysProc.__init__(self)
+        super().__init__()
         self.r56 = r56
         self.t566 = t566
 
@@ -642,7 +643,7 @@ class LatticeEnergyProfile(PhysProc):
     The PhysProcess shifts the canonical momentum according to new reference energy Eref
     """
     def __init__(self, Eref):
-        PhysProc.__init__(self)
+        super().__init__()
         self.Eref = Eref
 
     def apply(self, p_array, dz=0):
@@ -691,8 +692,7 @@ class IBS(PhysProc):
     """
 
     def __init__(self, step=1, **kwargs):
-        PhysProc.__init__(self)
-        self.step = step  # in unit step
+        super().__init__(step=step)
         self.method = kwargs.get("method", "Huang")
         self.Clog = kwargs.get("Clog", 8)
         self.update_Clog = kwargs.get("update_Clog", True)
