@@ -1,4 +1,5 @@
 *.xml
+__pycache__/
 *.pyc
 *.idea
 *.swp
