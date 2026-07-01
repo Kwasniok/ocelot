@@ -20,10 +20,7 @@ dev_tests/__init__.py
 docs/_build/
 docs/_sources
 # ignore tmp files that are created when execuding pytests
-tmp_*
-test.ast
-test.fmt1
-test.npz
+tmp/*
+!.gitkeep
 unit_tests/ebeam_test/linac_orb_correct/ref_results/test.p
 unit_tests/ebeam_test/section_track/data/
-filed_map.txt

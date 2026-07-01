@@ -122,9 +122,10 @@ def test_lattice_survey(lattice, tws0=None, method=None, parameter=None, update_
 def test_lattice_save_as_py_file(lattice, tws0, method, parameter=None, update_ref_values=False):
     """R maxtrix calculation test"""
 
-    lattice.save_as_py_file(file_name="tmp_lattice.py")
-    import tmp_lattice as tmp
-    new_lat = MagneticLattice(tmp.cell, method=lattice.method)
+    lattice.save_as_py_file(file_name="tmp/tmp_lattice.py")
+    sys.path.append("tmp")
+    import tmp_lattice
+    new_lat = MagneticLattice(tmp_lattice.cell, method=lattice.method)
 
     res = []
     for i, elem in enumerate(lattice.sequence):
@@ -152,9 +153,10 @@ def test_lattice_save_as_py_file_w_coupler(lattice, tws0, method, parameter=None
             elem.vxx_down = -0.004057 - 0.0001369j
             elem.vxy_down = 0.0029243 - 1.2891e-5j
     lattice0.update_transfer_maps()
-    lattice0.save_as_py_file(file_name="tmp_lattice.py")
-    import tmp_lattice as tmp
-    new_lat = MagneticLattice(tmp.cell, method=lattice0.method)
+    lattice0.save_as_py_file(file_name="tmp/tmp_lattice.py")
+    sys.path.append("tmp")
+    import tmp_lattice
+    new_lat = MagneticLattice(tmp_lattice.cell, method=lattice0.method)
 
     res = []
     for i, elem in enumerate(lattice0.sequence):
@@ -482,9 +484,10 @@ def test_merger_write_read(lattice, tws0, method, parameter=None, update_ref_val
 
     new_lat = merger(lattice, remaining_types=[Hcor, Vcor, Monitor], remaining_elems=[MPBPMF_47_I1, START_96_I1], init_energy=tws0.E)
 
-    new_lat.save_as_py_file(file_name="tmp_merger_lat.py")
-    import tmp_merger_lat as ml
-    new_lat2 = MagneticLattice(ml.cell, method=lattice.method)
+    new_lat.save_as_py_file(file_name="tmp/tmp_merger_lat.py")
+    sys.path.append("tmp")
+    import tmp_merger_lat
+    new_lat2 = MagneticLattice(tmp_merger_lat.cell, method=lattice.method)
     R_new = lattice_transfer_map(new_lat2, energy=tws0.E)
 
 
@@ -504,9 +507,10 @@ def test_matrix_write_read(lattice, tws0, method, parameter=None, update_ref_val
     lat = MagneticLattice((m, m2), method=method)
     R = lattice_transfer_map(lat, energy=tws0.E)
 
-    lat.save_as_py_file(file_name="tmp_mat_lat.py")
-    import tmp_mat_lat as mat
-    lat2 = MagneticLattice(mat.cell, method=lat.method)
+    lat.save_as_py_file(file_name="tmp/tmp_mat_lat.py")
+    sys.path.append("tmp")
+    import tmp_mat_lat
+    lat2 = MagneticLattice(tmp_mat_lat.cell, method=lat.method)
     R2 = lattice_transfer_map(lat2, energy=tws0.E)
 
 
@@ -580,9 +584,10 @@ def test_matrix_b_vector_read_write(lattice, tws0, method, parameter=None, updat
     R = lattice_transfer_map(lat, energy=init_energy)
 
     new_lat = merger(lat, remaining_types=[Drift], remaining_elems=[sol], init_energy=init_energy)
-    new_lat.save_as_py_file(file_name="tmp_b_vec.py")
-    import tmp_b_vec as b_vec
-    lat_read = MagneticLattice(b_vec.cell, method=method)
+    new_lat.save_as_py_file(file_name="tmp/tmp_b_vec.py")
+    sys.path.append("tmp")
+    import tmp_b_vec
+    lat_read = MagneticLattice(tmp_b_vec.cell, method=method)
 
     R_read = lattice_transfer_map(lat_read, energy=init_energy)
     result = check_matrix(R, R_read, tolerance=1.0e-8, tolerance_type='absolute', assert_info=' r_matrix - ')

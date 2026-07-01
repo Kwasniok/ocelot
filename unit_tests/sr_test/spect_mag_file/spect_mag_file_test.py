@@ -43,8 +43,8 @@ def test_radiation_file_and_function(lattice, screen, beam, update_ref_values=Fa
 
     filed_map = np.vstack((z, By)).T
 
-    np.savetxt("filed_map.txt", filed_map)
-    und_m = Undulator(field_file="filed_map.txt", eid="und")
+    np.savetxt("tmp/filed_map.txt", filed_map)
+    und_m = Undulator(field_file="tmp/filed_map.txt", eid="und")
 
     lat_m = MagneticLattice((und_m))
 
