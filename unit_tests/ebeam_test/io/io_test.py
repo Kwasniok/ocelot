@@ -22,8 +22,8 @@ def test_npz(p_array, parameter=None, update_ref_values=False):
 
     p_array_ref = copy.deepcopy(p_array)
 
-    save_particle_array("test.npz", p_array)
-    p_array_reload = load_particle_array("test.npz")
+    save_particle_array("tmp/test.npz", p_array)
+    p_array_reload = load_particle_array("tmp/test.npz")
 
     p_rel = obj2dict(p_array_reload)
     p_ref = obj2dict(p_array_ref)
@@ -60,8 +60,8 @@ def test_ast(p_array, parameter=None, update_ref_values=False):
     p_array_ref = copy.deepcopy(p_array)
     p_array_ref.rparticles[4, 0] *= 0
     p_array_ref.rparticles[5, 0] *= 0
-    save_particle_array("test.ast", p_array_ref)
-    p_array_reload = load_particle_array("test.ast")
+    save_particle_array("tmp/test.ast", p_array_ref)
+    p_array_reload = load_particle_array("tmp/test.ast")
 
     p_rel = obj2dict(p_array_reload)
     p_ref = obj2dict(p_array_ref)
@@ -78,8 +78,8 @@ def test_ast_new(p_array, parameter=None, update_ref_values=False):
     p_array_ref = copy.deepcopy(p_array)
     #p_array_ref.rparticles[4, 0] *= 0
     #p_array_ref.rparticles[5, 0] *= 0
-    save_particle_array("test.ast", p_array_ref)
-    p_array_reload = load_particle_array("test.ast")
+    save_particle_array("tmp/test.ast", p_array_ref)
+    p_array_reload = load_particle_array("tmp/test.ast")
 
     p_rel = obj2dict(p_array_reload)
     p_ref = obj2dict(p_array_ref)
@@ -96,8 +96,8 @@ def test_fmt1(p_array, parameter=None, update_ref_values=False):
     p_array_ref = copy.deepcopy(p_array)
     p_array_ref.rparticles[4, 0] *= 0
     p_array_ref.rparticles[5, 0] *= 0
-    save_particle_array("test.fmt1", p_array_ref)
-    p_array_reload = load_particle_array("test.fmt1")
+    save_particle_array("tmp/test.fmt1", p_array_ref)
+    p_array_reload = load_particle_array("tmp/test.fmt1")
     print(np.array_equal(p_array_reload.rparticles, p_array_ref.rparticles))
     print(p_array_reload.rparticles[5, :10], p_array_ref.rparticles[5, :10])
     p_rel = obj2dict(p_array_reload)
