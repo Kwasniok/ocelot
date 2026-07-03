@@ -23,6 +23,7 @@ from ocelot.cpbd.elements.unknown_element import UnknownElement
 from ocelot.cpbd.elements.vcor import Vcor
 from ocelot.cpbd.elements.xyquadruple import XYQuadrupole
 from ocelot.cpbd.elements.quadrupole import Quadrupole
+from ocelot.cpbd.transformations.exact_drift import ExactDriftTM
 from ocelot.cpbd.transformations.kick import KickTM
 from ocelot.cpbd.transformations.multipole import MultipoleTM
 from ocelot.cpbd.transformations.runge_kutta import RungeKuttaGlobalTM, RungeKuttaOcelotTM, RungeKuttaTM
@@ -37,7 +38,7 @@ DECLARED_TM_FACTORIES = [
     ("Aperture", lambda: Aperture(xmax=1e-3, ymax=2e-3, eid="AP_META"), (TransferMap, SecondTM)),
     ("Marker", lambda: Marker(eid="MK_META"), (TransferMap, SecondTM)),
     ("Monitor", lambda: Monitor(l=0.1, eid="MON_META"), (TransferMap, SecondTM)),
-    ("Drift", lambda: Drift(l=0.2, eid="D_META"), (TransferMap, SecondTM, KickTM, RungeKuttaGlobalTM, RungeKuttaOcelotTM, RungeKuttaTM, RungeKuttaTrTM)),
+    ("Drift", lambda: Drift(l=0.2, eid="D_META"), (TransferMap, SecondTM, ExactDriftTM, KickTM, RungeKuttaGlobalTM, RungeKuttaOcelotTM, RungeKuttaTM, RungeKuttaTrTM)),
     ("Hcor", lambda: Hcor(l=0.2, angle=1e-4, eid="HC_META"), (TransferMap, SecondTM)),
     ("Vcor", lambda: Vcor(l=0.2, angle=1e-4, eid="VC_META"), (TransferMap, SecondTM)),
     ("Quadrupole", lambda: Quadrupole(l=0.4, k1=1.2, k2=0.3, eid="Q_META"), (TransferMap, SecondTM, KickTM, RungeKuttaGlobalTM, RungeKuttaOcelotTM, RungeKuttaTM, RungeKuttaTrTM)),
@@ -128,7 +129,7 @@ def test_declared_supported_tms_are_buildable(family_name, factory, declared_tms
 
 
 def test_multi_method_wrappers_declare_their_buildable_tm_surface():
-    tm_candidates = (TransferMap, SecondTM, KickTM, RungeKuttaGlobalTM, RungeKuttaOcelotTM, RungeKuttaTM, RungeKuttaTrTM, UndulatorTestTM)
+    tm_candidates = (TransferMap, SecondTM, ExactDriftTM, KickTM, RungeKuttaGlobalTM, RungeKuttaOcelotTM, RungeKuttaTM, RungeKuttaTrTM, UndulatorTestTM)
 
     for family_name, factory, _ in DECLARED_TM_FACTORIES:
         element = factory()

@@ -48,12 +48,12 @@ __all__ = [
     "np",
 
     # === Transfer Maps & Transformations ===
-    "CavityTM", "TransferMap", "KickTM", "MultipoleTM", "PulseTM",
+    "CavityTM", "TransferMap", "ExactDriftTM", "KickTM", "MultipoleTM", "PulseTM",
     "RungeKuttaGlobalTM", "RungeKuttaOcelotTM", "RungeKuttaTM", "RungeKuttaTrTM", "SecondTM", "TWCavityTM",
     "UndulatorTestTM", "TMTypes",
 
     # === Transfer Map Parameters ===
-    "CavityParams", "FirstOrderParams", "KickParams", "MultipoleParams",
+    "CavityParams", "ExactDriftParams", "FirstOrderParams", "KickParams", "MultipoleParams",
     "RungeKuttaParams", "SecondOrderParams", "UndulatorTestParams"
 ]
 

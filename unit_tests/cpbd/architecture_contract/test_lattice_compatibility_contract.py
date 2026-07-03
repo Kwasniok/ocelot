@@ -6,6 +6,7 @@ from ocelot.cpbd.elements import Cavity, Drift, Hcor, Quadrupole
 from ocelot.cpbd.elements.cavity import CavityTM
 from ocelot.cpbd.latticeIO import LatticeIO
 from ocelot.cpbd.magnetic_lattice import MagneticLattice
+from ocelot.cpbd.transformations.exact_drift import ExactDriftTM
 from ocelot.cpbd.transformations.runge_kutta import RungeKuttaTM
 from ocelot.cpbd.transformations.second_order import SecondTM
 from ocelot.cpbd.transformations.transfer_map import TransferMap
@@ -47,6 +48,16 @@ def test_global_method_request_silently_falls_back_for_undeclared_tm():
 
     assert not any("global lattice request falls back" in str(warning.message) for warning in caught)
     assert all(isinstance(tm, TransferMap) for tm in lat.sequence[0].tms)
+
+
+def test_global_exact_drift_request_applies_to_declared_drift_only():
+    drift = Drift(l=0.4, eid="D_EXACT")
+    hcor = Hcor(l=0.4, angle=1.e-4, eid="HC_EXACT")
+
+    lat = MagneticLattice((drift, hcor), method={"global": ExactDriftTM})
+
+    assert all(isinstance(tm, ExactDriftTM) for tm in lat.sequence[0].tms)
+    assert all(isinstance(tm, TransferMap) for tm in lat.sequence[1].tms)
 
 
 def test_family_specific_method_request_is_strict_for_undeclared_tm():

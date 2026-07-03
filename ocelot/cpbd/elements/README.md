@@ -522,7 +522,7 @@ The columns below deliberately separate:
 
 | Family | Has edge | Linear optics / Twiss path | Declared / selectable active TMs | Extra internal or legacy-buildable paths | Notes |
 | --- | --- | --- | --- | --- | --- |
-| `Drift` | No | `TransferMap` via `DriftAtom` first-order hook | `TransferMap`, `SecondTM`, `KickTM`, `RungeKuttaGlobalTM`, `RungeKuttaOcelotTM`, `RungeKuttaTM`, `RungeKuttaTrTM` | none | Useful no-edge reference family; with an attached `mag_field`, RK can behave as a generic field region. |
+| `Drift` | No | `TransferMap` via `DriftAtom` first-order hook | `TransferMap`, `SecondTM`, `ExactDriftTM`, `KickTM`, `RungeKuttaGlobalTM`, `RungeKuttaOcelotTM`, `RungeKuttaTM`, `RungeKuttaTrTM` | none | Useful no-edge reference family; `ExactDriftTM` keeps the normal linear optics path but uses exact field-free particle tracking and path-length update. With an attached `mag_field`, RK can behave as a generic field region. |
 | `Quadrupole` | No | `TransferMap` via inherited `Magnet` first-order hook | `TransferMap`, `SecondTM`, `KickTM`, `RungeKuttaGlobalTM`, `RungeKuttaOcelotTM`, `RungeKuttaTM`, `RungeKuttaTrTM` | none | Wrapper also exposes convenience properties `k1l` and `k2l`; RK uses the hard-edge quadrupole field unless `mag_field` is attached. |
 | `Sextupole` | No | `TransferMap` via inherited `Magnet` first-order hook | `TransferMap`, `SecondTM`, `KickTM`, `RungeKuttaGlobalTM`, `RungeKuttaOcelotTM`, `RungeKuttaTM`, `RungeKuttaTrTM` | none | `KickTM` remains the compact nonlinear tracking path; RK uses the hard-edge sextupole field unless `mag_field` is attached. |
 | `Octupole` | No | `TransferMap` via inherited `Magnet` first-order hook | `TransferMap`, `SecondTM`, `KickTM`, `RungeKuttaGlobalTM`, `RungeKuttaOcelotTM`, `RungeKuttaTM`, `RungeKuttaTrTM` | none | `k3` enters `KickTM` and the hard-edge RK field; `SecondTM` still comes from inherited generic `Magnet` second-order hooks. |
@@ -646,6 +646,7 @@ Elements without edges usually implement only the `main` variant.
 
 - `create_first_order_*_params(...)`
 - `create_second_order_*_params(...)`
+- `create_exact_drift_*_params(...)`
 - `create_cavity_tm_*_params(...)`
 - `create_kick_*_params(...)`
 - `create_runge_kutta_*_params(...)`
@@ -660,6 +661,7 @@ Typical examples:
 
 - `tm_params/first_order_params.py`
 - `tm_params/second_order_params.py`
+- `tm_params/exact_drift_params.py`
 - `tm_params/cavity_params.py`
 - `tm_params/kick_params.py`
 - `tm_params/runge_kutta_params.py`
@@ -676,6 +678,7 @@ Overview:
 | `TMParams` | base marker class | all transformations | shared boundary type between atom hooks and transformations |
 | `FirstOrderParams` | `R`, `B`, `tilt` | `TransferMap` and as base for several other param classes | linear map plus additive offset and roll angle |
 | `SecondOrderParams` | `R`, `B`, `T`, `tilt`, `dx`, `dy` | `SecondTM` | linear part plus second-order tensor and source offsets used when the atom built the nonlinear map |
+| `ExactDriftParams` | `dx`, `dy`, `tilt` | `ExactDriftTM` | wrapper-visible geometry for the exact field-free drift map; energy-dependent longitudinal factors are computed by the transformation |
 | `CavityParams` | `R`, `B`, `tilt`, `v`, `freq`, `phi` | `CavityTM`, `TWCavityTM` | linear cavity map plus RF settings needed for energy gain and longitudinal RF terms |
 | `KickParams` | `dx`, `dy`, `tilt`, `angle`, `k1`, `k2`, `k3` | `KickTM` | strengths and offsets for algorithmic kick tracking rather than a prebuilt matrix |
 | `RungeKuttaParams` | `mag_field` callable | `RungeKuttaGlobalTM`, `RungeKuttaOcelotTM`, `RungeKuttaTM`, `RungeKuttaTrTM` | field callback used by the integrator; global RK returns fixed-frame trajectory coordinates, Ocelot RK converts back to coordinates relative to the transported reference trajectory |
@@ -696,6 +699,7 @@ Typical examples:
 
 - `transformations/transfer_map.py`
 - `transformations/second_order.py`
+- `transformations/exact_drift.py`
 - `transformations/cavity.py`
 - `transformations/kick.py`
 - `transformations/runge_kutta.py`
@@ -719,6 +723,7 @@ Examples:
 
 - `TransferMap` applies `R` and `B`
 - `SecondTM` applies `R`, `B`, and `T`
+- `ExactDriftTM` computes field-free drift algorithmically from the full longitudinal momentum
 - `CavityTM` uses cavity-specific metadata in addition to the linear map
 - `KickTM` computes the kick algorithmically instead of consuming a ready-made matrix
 

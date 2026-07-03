@@ -291,6 +291,8 @@ class OpticElement:
         tm_name = tm.__name__
         if "RungeKutta" in tm_name:
             return "create_runge_kutta_*_params(...)"
+        if "ExactDrift" in tm_name:
+            return "create_exact_drift_*_params(...)"
         if "Kick" in tm_name:
             return "create_kick_*_params(...)"
         if "Cavity" in tm_name:

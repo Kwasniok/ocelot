@@ -2,6 +2,7 @@ import pytest
 
 from ocelot.cpbd.elements import Cavity, Drift, Multipole, TWCavity, XYQuadrupole
 from ocelot.cpbd.elements.cavity import CavityTM
+from ocelot.cpbd.transformations.exact_drift import ExactDriftTM
 from ocelot.cpbd.transformations.multipole import MultipoleTM
 from ocelot.cpbd.transformations.second_order import SecondTM
 from ocelot.cpbd.transformations.transfer_map import TransferMap
@@ -14,6 +15,15 @@ def test_drift_can_switch_to_second_order_tracking():
     drift.set_tm(SecondTM)
 
     assert all(isinstance(tm, SecondTM) for tm in drift.tms)
+
+
+def test_drift_can_switch_to_exact_drift_tracking():
+    drift = Drift(l=0.35, tm=TransferMap)
+
+    drift.set_tm(ExactDriftTM)
+
+    assert all(isinstance(tm, ExactDriftTM) for tm in drift.tms)
+    assert all(isinstance(tm, TransferMap) for tm in drift.first_order_tms)
 
 
 def test_cavity_rejects_unsupported_explicit_tm_request():

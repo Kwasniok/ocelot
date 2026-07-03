@@ -1,8 +1,9 @@
-__all__ = ['CavityTM', 'TransferMap', 'KickTM', 'MultipoleTM',
+__all__ = ['CavityTM', 'TransferMap', 'ExactDriftTM', 'KickTM', 'MultipoleTM',
            'PulseTM', 'RungeKuttaGlobalTM', 'RungeKuttaOcelotTM', 'RungeKuttaTM',
            'RungeKuttaTrTM', 'SecondTM', 'TWCavityTM', 'UndulatorTestTM']
 
 from ocelot.cpbd.transformations.cavity import CavityTM
+from ocelot.cpbd.transformations.exact_drift import ExactDriftTM
 from ocelot.cpbd.transformations.transfer_map import TransferMap, TMTypes
 from ocelot.cpbd.transformations.kick import KickTM
 from ocelot.cpbd.transformations.multipole import MultipoleTM
