@@ -11,6 +11,7 @@ It is designed to model Free Electron Lasers (FELs), storage rings, and transpor
 - **Source code**: [https://github.com/ocelot-collab/ocelot](https://github.com/ocelot-collab/ocelot)
 - **Bug reports**: [https://github.com/ocelot-collab/ocelot/issues](https://github.com/ocelot-collab/ocelot/issues)
 - **License**: [GPL-3.0 license](https://github.com/ocelot-collab/ocelot/blob/master/LICENSE)
+- **Agent guide**: [AGENTS.md](./AGENTS.md)
 
 ---
 
