@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import importlib.util
 import os
+import re
 import shlex
 import subprocess
 import sys
@@ -16,6 +17,15 @@ ROOT = Path(__file__).resolve().parent
 DEMOS = ROOT / "demos"
 MAX_OUTPUT_CHARS = 12_000
 NOTEBOOK_DEPENDENCIES = ("nbconvert", "ipykernel")
+PIP_PACKAGE_BY_IMPORT = {
+    "PIL": "Pillow",
+    "cv2": "opencv-python",
+    "sklearn": "scikit-learn",
+}
+MISSING_MODULE_PATTERNS = (
+    re.compile(r"ModuleNotFoundError: No module named ['\"]([^'\"]+)['\"]"),
+    re.compile(r"ImportError: No module named ['\"]?([A-Za-z0-9_.-]+)['\"]?"),
+)
 
 
 @dataclass
@@ -32,6 +42,7 @@ class Failure:
 def make_env() -> dict[str, str]:
     env = os.environ.copy()
     env["MPLBACKEND"] = "Agg"
+    env["OCELOT_DEMO_RUNNER"] = "1"
 
     pythonpath = [str(ROOT)]
     if env.get("PYTHONPATH"):
@@ -48,6 +59,18 @@ def output_tail(output: str, limit: int = MAX_OUTPUT_CHARS) -> str:
     if len(output) <= limit:
         return output
     return f"... output truncated to last {limit} characters ...\n{output[-limit:]}"
+
+
+def missing_modules_from_output(output: str) -> list[str]:
+    modules: set[str] = set()
+    for pattern in MISSING_MODULE_PATTERNS:
+        for match in pattern.finditer(output):
+            modules.add(match.group(1).split(".")[0])
+    return sorted(modules)
+
+
+def pip_package_for_import(module: str) -> str:
+    return PIP_PACKAGE_BY_IMPORT.get(module, module)
 
 
 def matching_files(paths: Iterable[Path], match: str | None) -> list[Path]:
@@ -210,11 +233,19 @@ def run_all_scripts(
 
 
 def format_failure(failure: Failure) -> str:
+    missing_modules = missing_modules_from_output(f"{failure.stdout}\n{failure.stderr}")
     parts = [
         f"{failure.kind}: {relpath(failure.path)}",
         f"reason: {failure.reason}",
         f"command: {shlex.join(failure.command)}",
     ]
+    if missing_modules:
+        packages = " ".join(pip_package_for_import(module) for module in missing_modules)
+        parts.append(
+            "missing Python module(s): "
+            f"{', '.join(missing_modules)}\n"
+            f"install with:\n  python -m pip install {packages}"
+        )
     if failure.stdout:
         parts.append(f"stdout:\n{output_tail(failure.stdout).rstrip()}")
     if failure.stderr:
@@ -271,7 +302,37 @@ def run_all(kind: str = "all", match: str | None = None, timeout: float | None =
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Execute Ocelot demo notebooks and scripts.")
+    parser = argparse.ArgumentParser(
+        description="Execute Ocelot demo notebooks and scripts.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+examples:
+  run everything:
+    python test_run_all_demos.py
+
+  run only notebooks:
+    python test_run_all_demos.py --kind notebooks
+
+  run only Python scripts:
+    python test_run_all_demos.py --kind scripts
+
+  run only notebooks from demos/ipython_tutorials:
+    python test_run_all_demos.py --kind notebooks --match demos/ipython_tutorials/
+
+  run one notebook:
+    python test_run_all_demos.py --kind notebooks --match demos/docs/generate_parray.ipynb
+
+  run one script:
+    python test_run_all_demos.py --kind scripts --match demos/ebeam/dba.py
+
+  add a per-demo timeout:
+    python test_run_all_demos.py --kind notebooks --timeout 180
+
+notes:
+  --match is a substring filter on the relative demo path.
+  Notebook execution requires nbconvert and ipykernel in the active Python environment.
+""",
+    )
     parser.add_argument(
         "--kind",
         choices=("all", "notebooks", "scripts"),

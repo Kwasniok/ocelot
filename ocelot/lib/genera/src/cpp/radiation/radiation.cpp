@@ -4,7 +4,9 @@
 //#include "radiation.h"
 //#include "spline.h"
 #include <math.h>
+#ifdef _OPENMP
 #include <omp.h>
+#endif
 
 
 int radiation(const Particle particle, const Motion *motion, Screen *screen)
@@ -62,6 +64,7 @@ int radiation(const Particle particle, const Motion *motion, Screen *screen)
     double *imY = new double [crtl];
     //int  nthreats =
 
+#ifdef _OPENMP
     if(xpoint*ypoint*screen->eNstep<600)
     {
         omp_set_num_threads(1);
@@ -72,6 +75,7 @@ int radiation(const Particle particle, const Motion *motion, Screen *screen)
         omp_set_num_threads(16);
         omp_set_dynamic(1);
     }
+#endif
 
     for(n = 0; n<Nmotion-1; n++)
     {
@@ -93,7 +97,9 @@ int radiation(const Particle particle, const Motion *motion, Screen *screen)
             
             //omp_set_dynamic(1);      // Á‡ÔÂÚËÚ¸ ·Ë·ÎËÓÚÂÍÂ openmp ÏÂÌˇÚ¸ ˜ËÒÎÓ ÔÓÚÓÍÓ‚ ‚Ó ‚ÂÏˇ ËÒÔÓÎÌÂÌËˇ
             //omp_set_num_threads(8); // ÛÒÚ‡ÌÓ‚ËÚ¸ ˜ËÒÎÓ ÔÓÚÓÍÓ‚ ‚ 10
+#ifdef _OPENMP
             #pragma omp parallel for
+#endif
             for(int jx = 0; jx < xpoint; jx++)
             {
                 for(int jy = 0; jy < ypoint; jy++)
@@ -192,7 +198,9 @@ int radiation(const Particle particle, const Motion *motion, Screen *screen)
             
             //omp_set_dynamic(0);      // Á‡ÔÂÚËÚ¸ ·Ë·ÎËÓÚÂÍÂ openmp ÏÂÌˇÚ¸ ˜ËÒÎÓ ÔÓÚÓÍÓ‚ ‚Ó ‚ÂÏˇ ËÒÔÓÎÌÂÌËˇ
             //omp_set_num_threads(8); // ÛÒÚ‡ÌÓ‚ËÚ¸ ˜ËÒÎÓ ÔÓÚÓÍÓ‚ ‚ 10
+#ifdef _OPENMP
             #pragma omp parallel for
+#endif
             for(int jx = 0; jx < xpoint; jx++)
             {
                 for(int jy = 0; jy < ypoint; jy++)

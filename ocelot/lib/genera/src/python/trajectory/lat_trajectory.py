@@ -5,6 +5,7 @@ from ocelot.lib.genera.src.python.trajectory.undulator import und_trace
 from numpy import append
 from ocelot.cpbd.optics import *
 from ocelot.cpbd.elements import *
+from ocelot.cpbd.beam import Particle
 from ocelot.lib.genera.src.python.trajectory.motion import Motion
 from scipy.interpolate import splrep, splev
 
@@ -61,7 +62,7 @@ def integration_beta2(s, px, py):
     list_Ix = [Ix]
     list_Iy = [Iy]
     Is = s[0]
-    for i in xrange(0,len(px2)-2,2):
+    for i in range(0,len(px2)-2,2):
         Ix += (px2[i] + 4.*px2[i+1] + px2[i+2])*h/6.
         Iy += (py2[i] + 4.*py2[i+1] + py2[i+2])*h/6.
         list_Ix = append(list_Ix, Ix)
@@ -145,5 +146,4 @@ def trace4radiation(lat,particle0, accuracy = 1):
             particle = particle_end(motion, particle)
         motions.append(motion)
     return motions
-
 

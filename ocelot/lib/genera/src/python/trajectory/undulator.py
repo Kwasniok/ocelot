@@ -74,6 +74,19 @@ def Py2C(array):
     return c_array
 
 
+def undulator_misalignments(undulator, *, include_angles):
+    v_angle = getattr(undulator, "v_angle", 0.) if include_angles else 0.
+    h_angle = getattr(undulator, "h_angle", 0.) if include_angles else 0.
+    tilt = getattr(undulator, "dtilt", getattr(undulator, "tilt", 0.))
+    return [
+        getattr(undulator, "dx", 0.),
+        getattr(undulator, "dy", 0.),
+        v_angle,
+        h_angle,
+        tilt,
+    ]
+
+
 def define_points_undul(undulator, accuracy):
     accuracy = int(accuracy)
     #print undulator.type, undulator.id,undulator.transfer_map.order
@@ -114,7 +127,7 @@ def field_map_for_dll(undulator):
             z_arr = z_arr_ex
         mag_field = hstack((x_arr, y_arr, z_arr, fm.Bx_arr, fm.By_arr, fm.Bz_arr))
         len_mf = len(z_arr)
-        cols_mf = len(mag_field)/len_mf
+        cols_mf = int(len(mag_field)/len_mf)
         if cols_mf == 2:
             fm.type = "planar"
         elif cols_mf == 3:
@@ -176,9 +189,7 @@ def und_trace(undulator, particle0, energy, bRough, n_trajectory_points, accurac
     error = cundul.trajectory(Py2C(magField),       # 1D magnetic field array [X,Y,Z,Bx,By,Bz] or [Z,By] or [Z,By,Bx]
         colsMF,                         # number of cols in magnetic data
         lenMF,                          # number of rows in magnetic data
-        Py2C([undulator.dx,             # misaligmnent of undulator  [dx, dy, v_angle, h_angle, tilt]
-              undulator.dy, 0., 0.,
-              undulator.dtilt]),
+        Py2C(undulator_misalignments(undulator, include_angles=False)),
         c_int(bRough),                  # if bRough = 1 then |  |  | else  | . . . (|) . . . | (gauss integration)
         Py2C(init_cond),                # [beam.x [mm], beam.y [mm], 0 [long. pos. mm], beam.xp [rad!], beam.yp[rad!], gamma]
         Py2C(undul_param),              # [Bx (amplitude [T]), By (amplitude [T]), phase (between Bx and By),
@@ -236,9 +247,7 @@ def da_undul_list(undulator, list_particle, bRough = 1):
     error = cundul.da_undulator(Py2C(magField),       # 1D magnetic field array [X,Y,Z,Bx,By,Bz] or [Z,By] or [Z,By,Bx]
                 colsMF,                         # number of cols in magnetic data
                 lenMF,                          # number of rows in magnetic data
-                Py2C([undulator.dx,             # misaligmnent of undulator  [dx, dy, v_angle, h_angle, tilt]
-                      undulator.dy, undulator.v_angle, undulator.h_angle,
-                      undulator.dtilt]),
+                Py2C(undulator_misalignments(undulator, include_angles=True)),
                 c_int(bRough),                  # if bRough = 1 then |  |  | else  | . . . (|) . . . | (gauss integration)
                 Py2C(undul_param),              # [Bx (amplitude [T]), By (amplitude [T]), phase (between Bx and By),
                 # number_of_periods, lenPeriod [m], ax (width of undulator [m])]

@@ -5,8 +5,9 @@ TO_BUILD = radiation
 all: $(TO_BUILD)
 
 
-COMPILER = g++
-CFLAGS = -fPIC -O3 -fopenmp -Wall
+COMPILER ?= g++
+OPENMP_FLAGS ?= -fopenmp
+CFLAGS = -fPIC -O3 $(OPENMP_FLAGS) -Wall
 
 #COMPILER = g++-4.8
 #CFLAGS = -fPIC -O3 -m64 -fopenmp -Wall
@@ -27,4 +28,3 @@ $(TO_BUILD): $(SOURCE)
 
 clean: 
 	rm *.o *.a *.so
-

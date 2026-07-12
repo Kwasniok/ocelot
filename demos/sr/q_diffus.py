@@ -1,5 +1,6 @@
 __author__ = 'Sergey Tomin'
-
+import sys
+sys.path.append("../..")
 from pylab import *
 from ocelot.rad import *
 from ocelot import *
@@ -30,7 +31,7 @@ start = time()
 nund = 1               # Number of undulators
 nperiods = 125          # Period numbers per undulator
 kp = 1                  # applying energy diffusion "kick" every N period
-npls = 150              # particles number
+npls = 5 if matplotlib.get_backend().lower() == "agg" else 150  # particles number
 
 U40_short = Undulator(nperiods=kp, lperiod=0.040, Kx=4, eid="und")
 
@@ -53,7 +54,7 @@ sigma = sigma_gamma_quat(beam.E, U40_short.Kx, U40_short.lperiod, U40_short.lper
 
 num_bins = 50
 # the histogram of the data
-n, bins, patches = plt.hist((np.array(Uq) - beam.E)/beam.E, num_bins, normed=1, facecolor='green', alpha=0.5)
+n, bins, patches = plt.hist((np.array(Uq) - beam.E)/beam.E, num_bins, density=True, facecolor='green', alpha=0.5)
 
 print("sigma = ", sigma)
 print(sigma/sqrt(nund*nperiods))

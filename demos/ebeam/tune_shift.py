@@ -1,5 +1,6 @@
 __author__ = 'Sergey Tomin'
-
+import sys
+sys.path.append("../..")
 from ocelot.gui import *
 from ocelot.cpbd.track import *
 from ocelot.cpbd.elements.undulator_atom import und_field
@@ -53,7 +54,7 @@ tw0 = Twiss(beam)
 tws = twiss(lat,tw0, nPoints=1000)
 plot_opt_func(lat, tws)
 plt.show()
-mu_y_no_u = 1 - tws[-1].muy%(2*pi)/(2*pi)
+mu_y_no_u = 1 - tws[-1].muy%(2*np.pi)/(2*np.pi)
 print(mu_y_no_u)
 nturns = 2048*1-1
 

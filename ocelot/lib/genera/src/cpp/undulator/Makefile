@@ -4,10 +4,11 @@ TO_BUILD = undulator
 
 all: $(TO_BUILD)
 #all: $(TO_BUILD) static
-COMPILER = g++
+COMPILER ?= g++
 #sCOMPILER = g++-4.8
 
-CFLAGS = -Wall -fPIC -fopenmp
+OPENMP_FLAGS ?= -fopenmp
+CFLAGS = -Wall -fPIC $(OPENMP_FLAGS)
 
 SOURCE = integral.cpp spline.cpp motion.cpp u_field.cpp u_magfield.cpp u_rungekutta.cpp u_traject.cpp u_spline2d.cpp 
 

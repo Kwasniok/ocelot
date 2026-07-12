@@ -1,5 +1,7 @@
 //#include "gauss_cell_integr.h"
+#ifdef _OPENMP
 #include <omp.h>
+#endif
 #include <math.h>
 //template <typename T> inline constexpr // for gcc
 template <typename T> inline
@@ -251,7 +253,9 @@ int conv_2D(double *screen, const double *X, const double *Y, const int nx, cons
 
     precalculate_XY2( nx,   X,  sx, Tlim,  Xnew, expX,erfX  );
     precalculate_XY2( ny,   Y,  sy, Tlim,  Ynew, expY,erfY  );
+#ifdef _OPENMP
     #pragma omp parallel for
+#endif
     for (int i = ny_add;  i < ny - ny_add; i++)
     {
         for (int j = nx_add; j < nx - nx_add; j++)
@@ -272,6 +276,5 @@ int conv_2D(double *screen, const double *X, const double *Y, const int nx, cons
 
 
 }
-
 
 

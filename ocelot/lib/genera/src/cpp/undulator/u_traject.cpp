@@ -6,7 +6,9 @@
 #include "motion.h"
 #include "u_spline2d.h"
 #include "integral.h"
+#ifdef _OPENMP
 #include <omp.h>
+#endif
 //#include <math.h>
 //#include "traject.h"
 
@@ -269,7 +271,9 @@ int da_undulator(double *aMagField,
             self.tau = tau     # time-like coordinate wrt reference particle in the bunch
     */
     int ret = 0;
+#ifdef _OPENMP
     #pragma omp parallel for
+#endif
     for(int i = 0; i < np; i++)
     {
         double x = c_particle[i*7 + 0]; // initial horizontal condition [m]
@@ -303,7 +307,6 @@ int da_undulator(double *aMagField,
     }
     return ret;
 }
-
 
 
 

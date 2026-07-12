@@ -1,15 +1,63 @@
 __author__ = 'tomins'
+import sys 
+sys.path.append("../..")
+import os
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.animation
 from matplotlib import animation
 import numpy as np
+from pathlib import Path
 from ocelot.rad import *
 from ocelot import *
 from ocelot.gui import *
 
 font = {'size'   : 10}
 matplotlib.rc('font', **font)
+
+
+def standalone_animation_html(fragment):
+    fragment = fragment.replace(
+        '\n<link rel="stylesheet"\n'
+        'href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">\n',
+        '\n',
+    )
+    icon_replacements = {
+        '<i class="fa fa-minus"></i>': '<span>-</span>',
+        '<i class="fa fa-fast-backward"></i>': '<span>|&lt;</span>',
+        '<i class="fa fa-step-backward"></i>': '<span>&lt;</span>',
+        '<i class="fa fa-play fa-flip-horizontal"></i>': '<span>&lt; play</span>',
+        '<i class="fa fa-pause"></i>': '<span>pause</span>',
+        '<i class="fa fa-play"></i>': '<span>play</span>',
+        '<i class="fa fa-step-forward"></i>': '<span>&gt;</span>',
+        '<i class="fa fa-fast-forward"></i>': '<span>&gt;|</span>',
+        '<i class="fa fa-plus"></i>': '<span>+</span>',
+    }
+    for icon, label in icon_replacements.items():
+        fragment = fragment.replace(icon, label)
+
+    return """<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Phase shifter animation</title>
+</head>
+<body>
+{fragment}
+<style>
+body {{
+  font-family: sans-serif;
+  margin: 1rem;
+}}
+.anim-buttons button {{
+  min-width: 44px !important;
+  width: auto !important;
+  padding: 2px 6px !important;
+}}
+</style>
+</body>
+</html>
+""".format(fragment=fragment)
 
 # Set up formatting for the movie files
 #Writer = animation.writers['ffmpeg']
@@ -100,8 +148,12 @@ z, x, eph, total = phase_shifter(0)
 #plt.plot(z, x)
 #plt.show()
 
-ani = matplotlib.animation.FuncAnimation(fig, animate, init_func=init_animation, frames=60)
+demo_runner = os.environ.get("OCELOT_DEMO_RUNNER") == "1"
+frames = int(os.environ.get("OCELOT_ANIMATION_FRAMES", 3 if demo_runner else 60))
+ani = matplotlib.animation.FuncAnimation(fig, animate, init_func=init_animation, frames=frames)
 # worked for windows
 #ani.save('animation.gif',writer='imagemagick', fps=30)
-ani.save('animation.html', fps=30)
+html = standalone_animation_html(ani.to_jshtml(fps=30))
+if not demo_runner:
+    Path('animation.html').write_text(html, encoding='utf-8')
 #ani.save('animation.mp4', writer=writer)

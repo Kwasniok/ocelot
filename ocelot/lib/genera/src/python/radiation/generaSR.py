@@ -36,7 +36,7 @@ pathToDll = path_to_ocelot + tail
 try:
     my_rad = CDLL(pathToDll)
 except:
-    exec(open(path_to_ocelot+ "ocelot/lib/genera/src/cpp/compile.py"))
+    import ocelot.lib.genera.src.cpp.compile
     os.chdir(home_dir)
     my_rad = CDLL(pathToDll)
 
@@ -430,7 +430,10 @@ def calculateSR_py(lat, beam, screen, accuracy = 2, runParameters = None):
 
 
 from  scipy.special import kv
-from scipy.integrate import simps
+try:
+    from scipy.integrate import simpson
+except ImportError:
+    from scipy.integrate import simps as simpson
 from numpy import linspace
 
 class Bend_radiation:
@@ -471,6 +474,6 @@ class Bend_radiation:
     def flux_total(self):
         C_fi = 3.9614e19 #ph/(sec * rad * GeV * A)
         mrad = 1e-3 # transform rad to mrad
-        S = lambda w: 9.*sqrt(3)/8./pi*w*simps(kv(5./3.,linspace(w, 20, num=200)))
+        S = lambda w: 9.*sqrt(3)/8./pi*w*simpson(kv(5./3.,linspace(w, 20, num=200)))
         F = lambda eph: mrad*C_fi*self.energy*self.I*eph/self.eph_c*S(eph/self.eph_c)
         return F
