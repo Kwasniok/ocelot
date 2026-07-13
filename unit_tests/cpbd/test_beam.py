@@ -11,6 +11,7 @@ from ocelot.cpbd.beam import (cov_matrix_from_twiss,
                               twiss_iterable_to_df,
                               generate_parray,
                               s_to_cur,
+                              slice_analysis,
                               )
 from ocelot.common.globals import m_e_GeV, speed_of_light
 
@@ -26,6 +27,10 @@ from ocelot.common.globals import m_e_GeV, speed_of_light
 # dpx=0.00697330389,
 # dy=-0.02816641057,
 # dpy=0.002391521083
+
+
+def test_slice_analysis_facade_export():
+    assert callable(slice_analysis)
 
 
 def test_cov_matrix_to_parray():

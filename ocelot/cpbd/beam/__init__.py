@@ -14,7 +14,7 @@ __all__ = [
 
     # Beam analysis.
     "get_envelope", "get_current", "s_to_cur", "signal_to_spectrum",
-    "slice_analysis_py", "slice_analysis_transverse", "SliceParameters",
+    "slice_analysis", "slice_analysis_py", "slice_analysis_transverse", "SliceParameters",
     "global_slice_analysis_extended", "global_slice_analysis",
     "bunching_spectrum", "bunching_at_klist_2", "bunching_at_klist_py",
     "bunching_at_klist_np", "spectrum_to_z", "compute_bunching",
@@ -69,6 +69,7 @@ _LAZY_EXPORTS = {
     "get_current": ("ocelot.cpbd.beam.analysis", "get_current"),
     "s_to_cur": ("ocelot.cpbd.beam.analysis", "s_to_cur"),
     "signal_to_spectrum": ("ocelot.cpbd.beam.analysis", "signal_to_spectrum"),
+    "slice_analysis": ("ocelot.cpbd.beam.analysis", "slice_analysis"),
     "slice_analysis_py": ("ocelot.cpbd.beam.analysis", "slice_analysis_py"),
     "slice_analysis_transverse": ("ocelot.cpbd.beam.analysis", "slice_analysis_transverse"),
     "SliceParameters": ("ocelot.cpbd.beam.analysis", "SliceParameters"),
