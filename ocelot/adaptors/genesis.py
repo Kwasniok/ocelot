@@ -3906,7 +3906,7 @@ def cut_lattice(lat, n_cells, elem_in_cell=4):
     reads MagneticLattice()
     returns MagneticLattice() without first n_cells*elem_in_cell elements
     '''
-    n_cells=np.ceil(n_cells).astype(np.int)
+    n_cells = int(np.ceil(n_cells))
     lat_new = deepcopy(lat)
     del lat_new.sequence[0:elem_in_cell * (n_cells)]
     return lat_new

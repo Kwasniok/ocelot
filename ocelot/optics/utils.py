@@ -12,13 +12,13 @@ from ocelot.gui.optics import *
 class Signal(object):
     def __init__(self, n=100):
         self.t = np.linspace(-1,1, n)
-        self.f = np.zeros_like(self.t, dtype=np.complex)
+        self.f = np.zeros_like(self.t, dtype=complex)
         self.n = n
 
 class Signal3D(object):
     def __init__(self, n=100):
         self.t = np.linspace(-1,1, n)
-        self.f = np.zeros_like(self.t, dtype=np.complex)
+        self.f = np.zeros_like(self.t, dtype=complex)
         self.n = n
         
     def field_on_axis(self):

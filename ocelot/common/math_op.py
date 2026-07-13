@@ -81,7 +81,7 @@ def conj_sym(x):
     >> numpy.fft.ifft(conj_sym(x))
 
     """
-    x = np.array(x, dtype=np.complex)
+    x = np.array(x, dtype=complex)
     n = len(x)
 
     c = 0 if n % 2 == 1 else 1
@@ -546,7 +546,7 @@ def bin_scale(scale,bin_size):
     elif bin_size == 1:
         return scale
     else:
-        hbin = np.int(bin_size/2) #halfbin (to pick bin centers)
+        hbin = int(bin_size/2) #halfbin (to pick bin centers)
         new_shape = (scale.shape[0] // bin_size) * bin_size
         new_scale = scale[hbin : new_shape+hbin] [ :: bin_size]
         return new_scale

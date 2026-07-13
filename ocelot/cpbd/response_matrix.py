@@ -459,17 +459,17 @@ class ResponseMatrixJSON:
         nb1 = len(bpms1)
         # print("EXTRACT self: ", cors1)
         # print("EXTRACT self: ", bpms1)
-        c_names = cors1[np.in1d(cors1, cors2)]
+        c_names = cors1[np.isin(cors1, cors2)]
 
-        c_i1 = np.where(np.in1d(cors1, cors2))[0]
-        c_i2 = np.where(np.in1d(cors2, c_names))[0]
-        b_names = bpms1[np.in1d(bpms1, bpms2)]
-        b_i1 = np.where(np.in1d(bpms1, bpms2))[0]
-        b_i2 = np.where(np.in1d(bpms2, b_names))[0]
+        c_i1 = np.where(np.isin(cors1, cors2))[0]
+        c_i2 = np.where(np.isin(cors2, c_names))[0]
+        b_names = bpms1[np.isin(bpms1, bpms2)]
+        b_i1 = np.where(np.isin(bpms1, bpms2))[0]
+        b_i2 = np.where(np.isin(bpms2, b_names))[0]
 
         if not np.array_equal(c_names, cor_list):
             print(" Origin response matrix has no correctors:")
-            print(cors2[np.in1d(cors2, c_names, invert=True)])
+            print(cors2[np.isin(cors2, c_names, invert=True)])
         if not np.array_equal(b_names, bpm_list):
             print(" Origin response matrix has no BPMs:")
             print(bpm_list[b_i2[:]])
@@ -503,17 +503,17 @@ class ResponseMatrixJSON:
         nb1 = len(bpms1)
         # print("EXTRACT self: ", cors1)
         # print("EXTRACT self: ", bpms1)
-        c_names = cors1[np.in1d(cors1, cors2)]
+        c_names = cors1[np.isin(cors1, cors2)]
 
-        c_i1 = np.where(np.in1d(cors1, cors2))[0]
-        c_i2 = np.where(np.in1d(cors2, c_names))[0]
-        b_names = bpms1[np.in1d(bpms1, bpms2)]
-        b_i1 = np.where(np.in1d(bpms1, bpms2))[0]
-        b_i2 = np.where(np.in1d(bpms2, b_names))[0]
+        c_i1 = np.where(np.isin(cors1, cors2))[0]
+        c_i2 = np.where(np.isin(cors2, c_names))[0]
+        b_names = bpms1[np.isin(bpms1, bpms2)]
+        b_i1 = np.where(np.isin(bpms1, bpms2))[0]
+        b_i2 = np.where(np.isin(bpms2, b_names))[0]
 
         if not np.array_equal(c_names, cor_list):
             logger.warning(" ResponseMatrix.inject: Origin response matrix has no correctors:")
-            print(cors2[np.in1d(cors2, c_names, invert=True)])
+            print(cors2[np.isin(cors2, c_names, invert=True)])
         if not np.array_equal(b_names, bpm_list):
             logger.warning(" ResponseMatrix.inject: Origin response matrix has no BPMs:")
             print(bpm_list[b_i2[:]])
@@ -565,13 +565,13 @@ class ResponseMatrixJSON:
         nb1 = len(bpms1)
         nb2 = len(bpms2)
         # c_names = np.intersect1d(cors1, cors2)
-        c_names = cors1[np.in1d(cors1, cors2)]
-        c_i1 = np.where(np.in1d(cors1, cors2))[0]
-        c_i2 = np.where(np.in1d(cors2, cors1))[0]
+        c_names = cors1[np.isin(cors1, cors2)]
+        c_i1 = np.where(np.isin(cors1, cors2))[0]
+        c_i2 = np.where(np.isin(cors2, cors1))[0]
         # b_names = np.intersect1d(bpms1, bpms2)
-        b_names = bpms1[np.in1d(bpms1, bpms2)]
-        b_i1 = np.where(np.in1d(bpms1, bpms2))[0]
-        b_i2 = np.where(np.in1d(bpms2, bpms1))[0]
+        b_names = bpms1[np.isin(bpms1, bpms2)]
+        b_i1 = np.where(np.isin(bpms1, bpms2))[0]
+        b_i2 = np.where(np.isin(bpms2, bpms1))[0]
         plane = ["X", "Y"]
         for n in range(2):
             print("****************   ", plane[n], "   ****************")
@@ -770,13 +770,13 @@ class ResponseMatrix:
         nb1 = len(bpms1)
         nb2 = len(bpms2)
         # c_names = np.intersect1d(cors1, cors2)
-        c_names = cors1[np.in1d(cors1, cors2)]
-        c_i1 = np.where(np.in1d(cors1, cors2))[0]
-        c_i2 = np.where(np.in1d(cors2, cors1))[0]
+        c_names = cors1[np.isin(cors1, cors2)]
+        c_i1 = np.where(np.isin(cors1, cors2))[0]
+        c_i2 = np.where(np.isin(cors2, cors1))[0]
         # b_names = np.intersect1d(bpms1, bpms2)
-        b_names = bpms1[np.in1d(bpms1, bpms2)]
-        b_i1 = np.where(np.in1d(bpms1, bpms2))[0]
-        b_i2 = np.where(np.in1d(bpms2, bpms1))[0]
+        b_names = bpms1[np.isin(bpms1, bpms2)]
+        b_i1 = np.where(np.isin(bpms1, bpms2))[0]
+        b_i2 = np.where(np.isin(bpms2, bpms1))[0]
         plane = ["X", "Y"]
         for n in range(2):
             print("****************   ", plane[n], "   ****************")

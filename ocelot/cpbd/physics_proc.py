@@ -39,7 +39,7 @@ class PhysProc:
         self.z0 = None
 
     def check_step(self):
-        if not isinstance(self.step, (int, float)) and float(self.step).is_integer():
+        if not (isinstance(self.step, (int, float, np.integer)) and float(self.step).is_integer()):
             raise ValueError(f'step must be an integer number, instead {self.step}')
 
     def prepare(self, lat):
