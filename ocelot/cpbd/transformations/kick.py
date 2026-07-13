@@ -1,6 +1,6 @@
 import numpy as np
 
-from ocelot.cpbd.high_order import m_e_GeV
+from ocelot.common.globals import m_e_GeV
 from ocelot.cpbd.tm_utils import transform_vec_ent, transform_vec_ext
 from ocelot.cpbd.transformations.transfer_map import TransferMap
 from ocelot.cpbd.transformations.transformation import Transformation, TMTypes

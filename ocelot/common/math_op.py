@@ -5,33 +5,69 @@ statistical analysis functions, fitting, optimization and the like
 import sys
 
 import numpy as np
-from scipy import fftpack, integrate, interpolate, optimize
-from scipy.special import exp1, gamma, gammaincc
 
 try:
-    import numba as nb
-    numba_avail = True
-except ImportError:
-    print("math_op.py: module Numba is not installed. Install it if you want speed up correlation calculations")
-    numba_avail = False
+    from ocelot.common.geometry import get_tilt_matrix
+except ImportError:  # pragma: no cover - compatibility for unusual direct loading
+    def get_tilt_matrix(psi):
+        c = np.cos(psi)
+        s = np.sin(psi)
+        return np.array([
+            [c, -s, 0],
+            [s,  c, 0],
+            [0,  0, 1]
+        ])
 
-def get_tilt_matrix(psi):
-    """
-    Returns the rotation matrix T for a tilt of angle psi around the s-axis.
-    MAD-8 Eq. 9.7
-    """
-    c = np.cos(psi)
-    s = np.sin(psi)
-    return np.array([
-        [c, -s, 0],
-        [s,  c, 0],
-        [0,  0, 1]
-    ])
+nb = None
+numba_avail = None
+_corr_f_nb_impl = None
+_corr_c_nb_impl = None
+_mut_coh_func_impl = None
+
+
+def _fftpack():
+    from scipy import fftpack
+    return fftpack
+
+
+def _integrate():
+    from scipy import integrate
+    return integrate
+
+
+def _interpolate():
+    from scipy import interpolate
+    return interpolate
+
+
+def _optimize():
+    from scipy import optimize
+    return optimize
+
+
+def _gamma_functions():
+    from scipy.special import exp1, gamma, gammaincc
+    return exp1, gamma, gammaincc
+
+
+def _numba_is_available():
+    global nb, numba_avail
+    if numba_avail is None:
+        try:
+            import numba as _nb
+        except ImportError:
+            numba_avail = False
+            nb = None
+        else:
+            nb = _nb
+            numba_avail = True
+    return numba_avail
 
 def complete_gamma(a, z):
     """
     return 'complete' gamma function
     """
+    exp1, gamma, gammaincc = _gamma_functions()
     return exp1(z) if a == 0 else gamma(a)*gammaincc(a, z)
 
 
@@ -82,6 +118,8 @@ def invert_cdf(y, x):
     :return: function
     """
 
+    integrate = _integrate()
+    interpolate = _interpolate()
     cum_int = integrate.cumulative_trapezoid(y, x, initial=0)
     cdf = cum_int / cum_int[-1]
     return interpolate.interp1d(cdf, x, bounds_error=False, fill_value=(x[0], x[-1]))
@@ -134,6 +172,7 @@ def convolve(f, g):
     :param g: array
     :return: array, (f * g)[n]
     """
+    fftpack = _fftpack()
     f_fft = fftpack.fftshift(fftpack.fftn(f))
     g_fft = fftpack.fftshift(fftpack.fftn(g))
     return fftpack.fftshift(fftpack.ifftn(fftpack.ifftshift(f_fft*g_fft)))
@@ -147,6 +186,7 @@ def deconvolve(f, g):
     :param g: array
     :return: array,
     """
+    fftpack = _fftpack()
     f_fft = fftpack.fftshift(fftpack.fftn(f))
     g_fft = fftpack.fftshift(fftpack.fftn(g))
     return fftpack.fftshift(fftpack.ifftn(fftpack.ifftshift(f_fft/g_fft)))
@@ -399,6 +439,7 @@ def interp_idx(indices, values, kind='quadratic'):
     '''
     returns expected values at given indices as a result of interpolation
     '''
+    interpolate = _interpolate()
     function = interpolate.interp1d(np.arange(len(values)), values, kind=kind)
     return function(indices)
 
@@ -565,14 +606,29 @@ def corr_f_np(corr, val, n_skip=1, norm=1, count=0):
     else:
         corr[np.isnan(corr)] = 0
 
-corr_f_nb = nb.jit('void(double[:,:], double[:,:], int32, int32)', nopython=True, nogil=True)(corr_f_py) if numba_avail else corr_f_np
+def _get_corr_f_nb_impl():
+    global _corr_f_nb_impl
+    if _corr_f_nb_impl is None:
+        if _numba_is_available():
+            _corr_f_nb_impl = nb.jit(
+                'void(double[:,:], double[:,:], int32, int32)',
+                nopython=True,
+                nogil=True
+            )(corr_f_py)
+        else:
+            _corr_f_nb_impl = corr_f_np
+    return _corr_f_nb_impl
+
+
+def corr_f_nb(corr, val, n_skip=1, norm=1):
+    return _get_corr_f_nb_impl()(corr, val, n_skip, norm)
 
              
-def correlation2d(val, norm=0, n_skip=1, use_numba=numba_avail):
+def correlation2d(val, norm=0, n_skip=1, use_numba=None):
     N = int(val.shape[0] / n_skip)
     corr = np.zeros([N,N])
-    if use_numba:
-        corr_f_nb(corr, val, n_skip, norm)
+    if _numba_is_available() if use_numba is None else use_numba:
+        _get_corr_f_nb_impl()(corr, val, n_skip, norm)
     else:        
         corr_f_np(corr, val, n_skip, norm)
     return corr
@@ -634,7 +690,22 @@ def corr_c_np(corr, n_corr, val, norm):
                 else:
                     corr[i,j] = means - meanl * meanr
 
-corr_c_nb = nb.jit('void(double[:,:], int32, double[:,:], int32)', nopython=True, nogil=True)(corr_c_py) if numba_avail else corr_f_np
+def _get_corr_c_nb_impl():
+    global _corr_c_nb_impl
+    if _corr_c_nb_impl is None:
+        if _numba_is_available():
+            _corr_c_nb_impl = nb.jit(
+                'void(double[:,:], int32, double[:,:], int32)',
+                nopython=True,
+                nogil=True
+            )(corr_c_py)
+        else:
+            _corr_c_nb_impl = corr_c_np
+    return _corr_c_nb_impl
+
+
+def corr_c_nb(corr, n_corr, val, norm):
+    return _get_corr_c_nb_impl()(corr, n_corr, val, norm)
 
 
 def correlation2d_center(n_corr, val, norm=0, use_numba=1):
@@ -643,8 +714,8 @@ def correlation2d_center(n_corr, val, norm=0, use_numba=1):
     val = np.r_[zeros, val, zeros]
     corr = np.zeros([n_val, n_corr])
     
-    if use_numba:
-        corr_c_nb(corr, n_corr, val, norm)
+    if use_numba and _numba_is_available():
+        _get_corr_c_nb_impl()(corr, n_corr, val, norm)
         
     else:        
         corr_c_np(corr, n_corr, val, norm)
@@ -678,8 +749,22 @@ def mut_coh_func_py(J, fld, norm=1):
                             J[i_y1, i_x1, i_y2, i_x2] = j / n_z
 
 
-mut_coh_func = nb.jit('void(complex128[:,:,:,:], complex128[:,:,:], int32)', nopython=True, nogil=True)(mut_coh_func_py) \
-                if numba_avail else mut_coh_func_py
+def _get_mut_coh_func_impl():
+    global _mut_coh_func_impl
+    if _mut_coh_func_impl is None:
+        if _numba_is_available():
+            _mut_coh_func_impl = nb.jit(
+                'void(complex128[:,:,:,:], complex128[:,:,:], int32)',
+                nopython=True,
+                nogil=True
+            )(mut_coh_func_py)
+        else:
+            _mut_coh_func_impl = mut_coh_func_py
+    return _mut_coh_func_impl
+
+
+def mut_coh_func(J, fld, norm=1):
+    return _get_mut_coh_func_impl()(J, fld, norm)
 
 
 def gauss_fit(X, Y):
@@ -688,6 +773,7 @@ def gauss_fit(X, Y):
 
     p0 = [0, np.max(X) / 2, np.max(Y)]
     errfunc = lambda p, x, y: gauss(x, p) - y
+    optimize = _optimize()
     p1, success = optimize.leastsq(errfunc, p0[:], args=(X, Y))
     fit_mu, fit_stdev, ampl = p1
     Y1 = gauss(X, p1)

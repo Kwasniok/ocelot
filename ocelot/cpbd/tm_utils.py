@@ -6,13 +6,24 @@ from ocelot.cpbd.r_matrix import rot_mtx
 
 _logger = logging.getLogger(__name__)
 
-try:
-    import numba as nb
+nb = None
+nb_flag = None
+_transfer_maps_mult_impl = None
 
-    nb_flag = True
-except ImportError as error:
-    _logger.debug(" optics.py: module NUMBA is not installed. Install it to speed up calculation")
-    nb_flag = False
+
+def _numba_is_available():
+    global nb, nb_flag
+    if nb_flag is None:
+        try:
+            import numba as _nb
+        except ImportError:
+            _logger.debug(" optics.py: module NUMBA is not installed. Install it to speed up calculation")
+            nb = None
+            nb_flag = False
+        else:
+            nb = _nb
+            nb_flag = True
+    return nb_flag
 
 
 class SecondOrderMult:
@@ -33,7 +44,7 @@ class SecondOrderMult:
     def __init__(self):
         self.full_matrix = False
 
-        if nb_flag and False:
+        if False:
             self.tmat_multip = nb.njit()(SecondOrderMult.numba_apply)
         else:
             self.tmat_multip = SecondOrderMult.numpy_apply
@@ -150,7 +161,18 @@ def transfer_maps_mult_full_py(Ba, Ra, Ta, Bb, Rb, Tb):
     return Bc, Rc, Tc
 
 
-transfer_maps_mult = transfer_maps_mult_py if nb_flag is not True else nb.jit(transfer_maps_mult_py, nopython=True)
+def _get_transfer_maps_mult_impl():
+    global _transfer_maps_mult_impl
+    if _transfer_maps_mult_impl is None:
+        if _numba_is_available():
+            _transfer_maps_mult_impl = nb.jit(transfer_maps_mult_py, nopython=True)
+        else:
+            _transfer_maps_mult_impl = transfer_maps_mult_py
+    return _transfer_maps_mult_impl
+
+
+def transfer_maps_mult(*args, **kwargs):
+    return _get_transfer_maps_mult_impl()(*args, **kwargs)
 
 
 def transfer_map_rotation(R, T, tilt):

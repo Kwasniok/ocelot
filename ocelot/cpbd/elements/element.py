@@ -1,12 +1,10 @@
+from __future__ import annotations
+
 import numpy as np
 
-from ocelot.common.math_op import get_tilt_matrix
-from ocelot.cpbd.tm_params.second_order_params import SecondOrderParams
+from ocelot.common.geometry import get_tilt_matrix
 from ocelot.cpbd.tm_params.first_order_params import FirstOrderParams
-from ocelot.cpbd.tm_params.kick_params import KickParams
-from ocelot.cpbd.high_order import t_nnn
 from ocelot.cpbd.r_matrix import uni_matrix
-from ocelot.cpbd.tm_utils import map_transform_with_offsets
 
 
 class Element:
@@ -96,6 +94,10 @@ class Element:
         return FirstOrderParams(R, B, self.tilt)
 
     def create_second_order_main_params(self, energy: float, delta_length: float = 0.0) -> SecondOrderParams:
+        from ocelot.cpbd.high_order import t_nnn
+        from ocelot.cpbd.tm_params.second_order_params import SecondOrderParams
+        from ocelot.cpbd.tm_utils import map_transform_with_offsets
+
         # Generic straight-element second-order fallback. Families with custom
         # nonlinear behavior should override this instead of relying on it.
         T = t_nnn(delta_length if delta_length is not None else self.l, 0., 0., 0.,

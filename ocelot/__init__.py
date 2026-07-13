@@ -1,8 +1,45 @@
 """
-general ocelot description
+Public Ocelot package facade.
+
+The root package intentionally stays lightweight. Public names are loaded on
+first access so that ``import ocelot`` and narrow submodule imports do not pay
+for the full accelerator, radiation, I/O, and plotting stack.
 """
 
+from importlib import import_module
+
 __version__ = '26.06.1'
+
+
+class _CopyCompat:
+    """Compatibility object for legacy ``from ocelot import *`` workflows.
+
+    Older examples used ``copy(obj)`` from the Ocelot root namespace, while
+    some test/config modules import Python's ``copy`` module before star
+    importing Ocelot and then call ``copy.copy`` or ``copy.deepcopy``.
+    """
+
+    def __call__(self, obj):
+        from copy import copy
+
+        return copy(obj)
+
+    @staticmethod
+    def copy(obj):
+        from copy import copy
+
+        return copy(obj)
+
+    @staticmethod
+    def deepcopy(obj, memo=None):
+        from copy import deepcopy
+
+        if memo is None:
+            return deepcopy(obj)
+        return deepcopy(obj, memo)
+
+
+_COPY_COMPAT = _CopyCompat()
 
 
 __all__ = [
@@ -20,6 +57,7 @@ __all__ = [
     'Element', 'Multipole', 'Quadrupole', 'RBend', "Matrix", "UnknownElement",
     'SBend', 'Bend', 'Drift', 'Undulator', 'Hcor', "Solenoid", "TDCavity",
     'Vcor', "Sextupole", "Monitor", "Marker", "Octupole", "Cavity", "Aperture",
+    "XYQuadrupole",
 
     # === Lattice Matching ===
     "match", "match_tunes",
@@ -27,7 +65,7 @@ __all__ = [
     # === Tracking ===
     "tracking_step", "create_track_list", "track_nturns", "freq_analysis",
     "contour_da", "track_nturns_mpi", "nearest_particle", "stable_particles",
-    "spectrum", "track",
+    "spectrum", "track", "lattice_track",
 
     # === Global Constants ===
     "pi", "m_e_eV", "m_e_MeV", "m_e_GeV", "speed_of_light",
@@ -45,7 +83,7 @@ __all__ = [
     "MagneticLattice", "merger",
 
     # === External Dependencies ===
-    "np",
+    "np", "copy", "deepcopy",
 
     # === Transfer Maps & Transformations ===
     "CavityTM", "TransferMap", "ExactDriftTM", "KickTM", "MultipoleTM", "PulseTM",
@@ -57,82 +95,157 @@ __all__ = [
     "RungeKuttaParams", "SecondOrderParams", "UndulatorTestParams"
 ]
 
-# ============================================================================
-# External Dependencies
-# ============================================================================
-import numpy as np
 
-# ============================================================================
-# Lattice Infrastructure
-# ============================================================================
-from ocelot.cpbd.magnetic_lattice import MagneticLattice, merger
-from ocelot.cpbd.navi import Navigator
+_LAZY_EXPORTS = {
+    # External dependencies and logging compatibility.
+    "np": ("numpy", None),
+    "copy": (None, None),
+    "deepcopy": ("copy", "deepcopy"),
+    "logging": ("logging", None),
+    "ocelog": ("ocelot.common.ocelog", "ocelog"),
 
-# ============================================================================
-# Beam & Particle Physics
-# ============================================================================
-from ocelot.cpbd.beam.core import Twiss, Beam
-from ocelot.cpbd.beam.particle import ParticleArray, Particle
-from ocelot.cpbd.beam.beam import ellipse_from_twiss, gauss_from_twiss
-from ocelot.cpbd.beam.generator import generate_parray
-from ocelot.cpbd.beam.analysis import get_current, get_envelope, global_slice_analysis
+    # Lattice infrastructure.
+    "MagneticLattice": ("ocelot.cpbd.magnetic_lattice", "MagneticLattice"),
+    "merger": ("ocelot.cpbd.magnetic_lattice", "merger"),
+    "Navigator": ("ocelot.cpbd.navi", "Navigator"),
 
-# ============================================================================
-# Input/Output
-# ============================================================================
-from ocelot.cpbd.io import *
+    # Beam and particle physics.
+    "Twiss": ("ocelot.cpbd.beam.core", "Twiss"),
+    "Beam": ("ocelot.cpbd.beam.core", "Beam"),
+    "ParticleArray": ("ocelot.cpbd.beam.particle", "ParticleArray"),
+    "Particle": ("ocelot.cpbd.beam.particle", "Particle"),
+    "ellipse_from_twiss": ("ocelot.cpbd.beam.beam", "ellipse_from_twiss"),
+    "gauss_from_twiss": ("ocelot.cpbd.beam.beam", "gauss_from_twiss"),
+    "generate_parray": ("ocelot.cpbd.beam.generator", "generate_parray"),
+    "get_current": ("ocelot.cpbd.beam.analysis", "get_current"),
+    "get_envelope": ("ocelot.cpbd.beam.analysis", "get_envelope"),
+    "global_slice_analysis": ("ocelot.cpbd.beam.analysis", "global_slice_analysis"),
 
-# ============================================================================
-# Optics & Matching
-# ============================================================================
-from ocelot.cpbd.match import *
+    # Input/output.
+    "save_particle_array": ("ocelot.cpbd.io", "save_particle_array"),
+    "load_particle_array": ("ocelot.cpbd.io", "load_particle_array"),
 
-# ============================================================================
-# Transfer Maps & Parameters
-# ============================================================================
-from ocelot.cpbd.tm_params import *
-from ocelot.cpbd.transformations import *
+    # Optics and matching.
+    "fodo_parameters": ("ocelot.cpbd.optics", "fodo_parameters"),
+    "lattice_transfer_map": ("ocelot.cpbd.optics", "lattice_transfer_map"),
+    "twiss": ("ocelot.cpbd.optics", "twiss"),
+    "MethodTM": ("ocelot.cpbd.optics", "MethodTM"),
+    "match": ("ocelot.cpbd.match", "match"),
+    "match_tunes": ("ocelot.cpbd.match", "match_tunes"),
 
-# ============================================================================
-# Lattice Elements
-# ============================================================================
-from ocelot.cpbd.elements import *
+    # Lattice elements.
+    "Element": ("ocelot.cpbd.elements.element", "Element"),
+    "Multipole": ("ocelot.cpbd.elements.multipole", "Multipole"),
+    "Quadrupole": ("ocelot.cpbd.elements.quadrupole", "Quadrupole"),
+    "RBend": ("ocelot.cpbd.elements.rbend", "RBend"),
+    "Matrix": ("ocelot.cpbd.elements.matrix", "Matrix"),
+    "UnknownElement": ("ocelot.cpbd.elements.unknown_element", "UnknownElement"),
+    "SBend": ("ocelot.cpbd.elements.sbend", "SBend"),
+    "Bend": ("ocelot.cpbd.elements.bend", "Bend"),
+    "Drift": ("ocelot.cpbd.elements.drift", "Drift"),
+    "Undulator": ("ocelot.cpbd.elements.undulator", "Undulator"),
+    "Hcor": ("ocelot.cpbd.elements.hcor", "Hcor"),
+    "Solenoid": ("ocelot.cpbd.elements.solenoid", "Solenoid"),
+    "TDCavity": ("ocelot.cpbd.elements.tdcavity", "TDCavity"),
+    "Vcor": ("ocelot.cpbd.elements.vcor", "Vcor"),
+    "Sextupole": ("ocelot.cpbd.elements.sextupole", "Sextupole"),
+    "Monitor": ("ocelot.cpbd.elements.monitor", "Monitor"),
+    "Marker": ("ocelot.cpbd.elements.marker", "Marker"),
+    "Octupole": ("ocelot.cpbd.elements.octupole", "Octupole"),
+    "Cavity": ("ocelot.cpbd.elements.cavity", "Cavity"),
+    "Aperture": ("ocelot.cpbd.elements.aperture", "Aperture"),
+    "XYQuadrupole": ("ocelot.cpbd.elements.xyquadruple", "XYQuadrupole"),
 
-# ============================================================================
-# Tracking & Analysis
-# ============================================================================
-from ocelot.cpbd.track import *
+    # Tracking and analysis.
+    "tracking_step": ("ocelot.cpbd.track", "tracking_step"),
+    "create_track_list": ("ocelot.cpbd.track", "create_track_list"),
+    "track_nturns": ("ocelot.cpbd.track", "track_nturns"),
+    "freq_analysis": ("ocelot.cpbd.track", "freq_analysis"),
+    "contour_da": ("ocelot.cpbd.track", "contour_da"),
+    "track_nturns_mpi": ("ocelot.cpbd.track", "track_nturns_mpi"),
+    "nearest_particle": ("ocelot.cpbd.track", "nearest_particle"),
+    "stable_particles": ("ocelot.cpbd.track", "stable_particles"),
+    "spectrum": ("ocelot.cpbd.track", "spectrum"),
+    "track": ("ocelot.cpbd.track", "track"),
+    "lattice_track": ("ocelot.cpbd.track", "lattice_track"),
 
-# ============================================================================
-# Global Constants & Utilities
-# ============================================================================
-from ocelot.common.globals import *
-from ocelot.common.ocelog import *
+    # Global constants.
+    "pi": ("ocelot.common.globals", "pi"),
+    "m_e_eV": ("ocelot.common.globals", "m_e_eV"),
+    "m_e_MeV": ("ocelot.common.globals", "m_e_MeV"),
+    "m_e_GeV": ("ocelot.common.globals", "m_e_GeV"),
+    "speed_of_light": ("ocelot.common.globals", "speed_of_light"),
 
-# ============================================================================
-# Beam Dynamics & Phenomena
-# ============================================================================
-from ocelot.cpbd.chromaticity import *
-from ocelot.cpbd.beam_params import *
-from ocelot.cpbd.csr import *
-from ocelot.cpbd.sc import *
-from ocelot.cpbd.wake3D import *
-from ocelot.cpbd.physics_proc import *
+    # Beam dynamics and phenomena.
+    "compensate_chromaticity": ("ocelot.cpbd.chromaticity", "compensate_chromaticity"),
+    "EbeamParams": ("ocelot.cpbd.beam_params", "EbeamParams"),
+    "CSR": ("ocelot.cpbd.csr", "CSR"),
+    "SpaceCharge": ("ocelot.cpbd.sc", "SpaceCharge"),
+    "LSC": ("ocelot.cpbd.sc", "LSC"),
+
+    # Wake effects and physics processes.
+    "Wake": ("ocelot.cpbd.wake3D", "Wake"),
+    "WakeTable": ("ocelot.cpbd.wake3D", "WakeTable"),
+    "WakeKick": ("ocelot.cpbd.wake3D", "WakeKick"),
+    "WakeTableDechirperOffAxis": ("ocelot.cpbd.wake3D", "WakeTableDechirperOffAxis"),
+    "LongWake": ("ocelot.cpbd.wake3D", "LongWake"),
+    "LinLongWake": ("ocelot.cpbd.wake3D", "LinLongWake"),
+    "BeamTransform": ("ocelot.cpbd.physics_proc", "BeamTransform"),
+    "SmoothBeam": ("ocelot.cpbd.physics_proc", "SmoothBeam"),
+    "EmptyProc": ("ocelot.cpbd.physics_proc", "EmptyProc"),
+    "PhysProc": ("ocelot.cpbd.physics_proc", "PhysProc"),
+    "LaserHeater": ("ocelot.cpbd.physics_proc", "LaserHeater"),
+    "LaserModulator": ("ocelot.cpbd.physics_proc", "LaserModulator"),
+    "SpontanRadEffects": ("ocelot.cpbd.physics_proc", "SpontanRadEffects"),
+    "PhaseSpaceAperture": ("ocelot.cpbd.physics_proc", "PhaseSpaceAperture"),
+    "RectAperture": ("ocelot.cpbd.physics_proc", "RectAperture"),
+    "EllipticalAperture": ("ocelot.cpbd.physics_proc", "EllipticalAperture"),
+    "CopyBeam": ("ocelot.cpbd.physics_proc", "CopyBeam"),
+    "SaveBeam": ("ocelot.cpbd.physics_proc", "SaveBeam"),
+    "LatticeEnergyProfile": ("ocelot.cpbd.physics_proc", "LatticeEnergyProfile"),
+
+    # Transfer maps and transformations.
+    "CavityTM": ("ocelot.cpbd.transformations.cavity", "CavityTM"),
+    "TransferMap": ("ocelot.cpbd.transformations.transfer_map", "TransferMap"),
+    "ExactDriftTM": ("ocelot.cpbd.transformations.exact_drift", "ExactDriftTM"),
+    "KickTM": ("ocelot.cpbd.transformations.kick", "KickTM"),
+    "MultipoleTM": ("ocelot.cpbd.transformations.multipole", "MultipoleTM"),
+    "PulseTM": ("ocelot.cpbd.transformations.pulse", "PulseTM"),
+    "RungeKuttaGlobalTM": ("ocelot.cpbd.transformations.runge_kutta", "RungeKuttaGlobalTM"),
+    "RungeKuttaOcelotTM": ("ocelot.cpbd.transformations.runge_kutta", "RungeKuttaOcelotTM"),
+    "RungeKuttaTM": ("ocelot.cpbd.transformations.runge_kutta", "RungeKuttaTM"),
+    "RungeKuttaTrTM": ("ocelot.cpbd.transformations.runge_kutta_tr", "RungeKuttaTrTM"),
+    "SecondTM": ("ocelot.cpbd.transformations.second_order", "SecondTM"),
+    "TWCavityTM": ("ocelot.cpbd.transformations.tw_cavity", "TWCavityTM"),
+    "UndulatorTestTM": ("ocelot.cpbd.transformations.undulator_test", "UndulatorTestTM"),
+    "TMTypes": ("ocelot.cpbd.transformations.transformation", "TMTypes"),
+
+    # Transfer map parameters.
+    "CavityParams": ("ocelot.cpbd.tm_params.cavity_params", "CavityParams"),
+    "ExactDriftParams": ("ocelot.cpbd.tm_params.exact_drift_params", "ExactDriftParams"),
+    "FirstOrderParams": ("ocelot.cpbd.tm_params.first_order_params", "FirstOrderParams"),
+    "KickParams": ("ocelot.cpbd.tm_params.kick_params", "KickParams"),
+    "MultipoleParams": ("ocelot.cpbd.tm_params.multipole_params", "MultipoleParams"),
+    "RungeKuttaParams": ("ocelot.cpbd.tm_params.runge_kutta_params", "RungeKuttaParams"),
+    "SecondOrderParams": ("ocelot.cpbd.tm_params.second_order_params", "SecondOrderParams"),
+    "UndulatorTestParams": ("ocelot.cpbd.tm_params.undulator_test_params", "UndulatorTestParams"),
+}
 
 
-print('initializing ocelot...')
+def __getattr__(name):
+    try:
+        module_name, attr_name = _LAZY_EXPORTS[name]
+    except KeyError as exc:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}") from exc
 
-try:
-    import numba
-except:
-    print("import: module NUMBA is not installed. Install it to speed up calculation")
+    if name == "copy":
+        value = _COPY_COMPAT
+    else:
+        module = import_module(module_name)
+        value = module if attr_name is None else getattr(module, attr_name)
+    globals()[name] = value
+    return value
 
-try:
-    import pyfftw
-except:
-    print("import: module PYFFTW is not installed. Install it to speed up calculation")
 
-try:
-    import numexpr
-except:
-    print("import: module NUMEXPR is not installed. Install it to speed up calculation")
+def __dir__():
+    return sorted(set(globals()) | set(__all__) | set(_LAZY_EXPORTS))

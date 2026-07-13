@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 
-from ocelot.cpbd.beam import Particle, ParticleArray
+from ocelot.cpbd.beam.particle import Particle, ParticleArray
 from ocelot.cpbd.elements.element import Element
 
 _logger = logging.getLogger(__name__)

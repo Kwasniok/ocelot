@@ -1,28 +1,47 @@
+from importlib import import_module
+
 __all__ = ['UnknownElement', 'Aperture', 'Bend', 'Cavity', 'Drift', 'Element',
            'Hcor', 'Marker', 'Matrix', 'Monitor', 'Multipole', 'Octupole', 'Pulse',
            'Quadrupole', 'RBend', 'SBend', 'Sextupole', 'Solenoid', 'TDCavity',
            'TWCavity', 'Undulator', 'Vcor', 'XYQuadrupole']
 
-from ocelot.cpbd.elements.aperture import Aperture
-from ocelot.cpbd.elements.bend import Bend
-from ocelot.cpbd.elements.cavity import Cavity
-from ocelot.cpbd.elements.drift import Drift
-from ocelot.cpbd.elements.element import Element
-from ocelot.cpbd.elements.hcor import Hcor
-from ocelot.cpbd.elements.marker import Marker
-from ocelot.cpbd.elements.matrix import Matrix
-from ocelot.cpbd.elements.monitor import Monitor
-from ocelot.cpbd.elements.multipole import Multipole
-from ocelot.cpbd.elements.octupole import Octupole
-from ocelot.cpbd.elements.pulse import Pulse
-from ocelot.cpbd.elements.quadrupole import Quadrupole
-from ocelot.cpbd.elements.rbend import RBend
-from ocelot.cpbd.elements.sbend import SBend
-from ocelot.cpbd.elements.sextupole import Sextupole
-from ocelot.cpbd.elements.solenoid import Solenoid
-from ocelot.cpbd.elements.tdcavity import TDCavity
-from ocelot.cpbd.elements.twcavity import TWCavity
-from ocelot.cpbd.elements.undulator import Undulator
-from ocelot.cpbd.elements.unknown_element import UnknownElement
-from ocelot.cpbd.elements.vcor import Vcor
-from ocelot.cpbd.elements.xyquadruple import XYQuadrupole
+_LAZY_EXPORTS = {
+    'UnknownElement': ('ocelot.cpbd.elements.unknown_element', 'UnknownElement'),
+    'Aperture': ('ocelot.cpbd.elements.aperture', 'Aperture'),
+    'Bend': ('ocelot.cpbd.elements.bend', 'Bend'),
+    'Cavity': ('ocelot.cpbd.elements.cavity', 'Cavity'),
+    'Drift': ('ocelot.cpbd.elements.drift', 'Drift'),
+    'Element': ('ocelot.cpbd.elements.element', 'Element'),
+    'Hcor': ('ocelot.cpbd.elements.hcor', 'Hcor'),
+    'Marker': ('ocelot.cpbd.elements.marker', 'Marker'),
+    'Matrix': ('ocelot.cpbd.elements.matrix', 'Matrix'),
+    'Monitor': ('ocelot.cpbd.elements.monitor', 'Monitor'),
+    'Multipole': ('ocelot.cpbd.elements.multipole', 'Multipole'),
+    'Octupole': ('ocelot.cpbd.elements.octupole', 'Octupole'),
+    'Pulse': ('ocelot.cpbd.elements.pulse', 'Pulse'),
+    'Quadrupole': ('ocelot.cpbd.elements.quadrupole', 'Quadrupole'),
+    'RBend': ('ocelot.cpbd.elements.rbend', 'RBend'),
+    'SBend': ('ocelot.cpbd.elements.sbend', 'SBend'),
+    'Sextupole': ('ocelot.cpbd.elements.sextupole', 'Sextupole'),
+    'Solenoid': ('ocelot.cpbd.elements.solenoid', 'Solenoid'),
+    'TDCavity': ('ocelot.cpbd.elements.tdcavity', 'TDCavity'),
+    'TWCavity': ('ocelot.cpbd.elements.twcavity', 'TWCavity'),
+    'Undulator': ('ocelot.cpbd.elements.undulator', 'Undulator'),
+    'Vcor': ('ocelot.cpbd.elements.vcor', 'Vcor'),
+    'XYQuadrupole': ('ocelot.cpbd.elements.xyquadruple', 'XYQuadrupole'),
+}
+
+
+def __getattr__(name):
+    try:
+        module_name, attr_name = _LAZY_EXPORTS[name]
+    except KeyError as exc:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}") from exc
+
+    value = getattr(import_module(module_name), attr_name)
+    globals()[name] = value
+    return value
+
+
+def __dir__():
+    return sorted(set(globals()) | set(__all__))

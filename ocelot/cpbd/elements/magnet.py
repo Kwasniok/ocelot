@@ -1,14 +1,11 @@
+from __future__ import annotations
+
 import numpy as np
 from ocelot.common.globals import speed_of_light, m_e_GeV
-from ocelot.common.math_op import get_tilt_matrix
+from ocelot.common.geometry import get_tilt_matrix
 from ocelot.cpbd.elements.element import Element
-from ocelot.cpbd.tm_params.kick_params import KickParams
 from ocelot.cpbd.tm_params.first_order_params import FirstOrderParams
-from ocelot.cpbd.tm_params.runge_kutta_params import RungeKuttaParams
-from ocelot.cpbd.tm_params.second_order_params import SecondOrderParams
-from ocelot.cpbd.high_order import t_nnn
 from ocelot.cpbd.r_matrix import uni_matrix
-from ocelot.cpbd.tm_utils import map_transform_with_offsets
 
 
 class Magnet(Element):
@@ -101,6 +98,7 @@ class Magnet(Element):
         return self.mag_field if self.mag_field is not None else self.default_mag_field(energy)
 
     def create_runge_kutta_main_params(self, energy):
+        from ocelot.cpbd.tm_params.runge_kutta_params import RungeKuttaParams
         return RungeKuttaParams(mag_field=self.get_mag_field(energy))
 
     def create_first_order_main_params(self, energy: float, delta_length: float = None) -> FirstOrderParams:
@@ -117,6 +115,10 @@ class Magnet(Element):
         return FirstOrderParams(R, B, self.tilt)
 
     def create_second_order_main_params(self, energy: float, delta_length: float = 0.0) -> SecondOrderParams:
+        from ocelot.cpbd.high_order import t_nnn
+        from ocelot.cpbd.tm_params.second_order_params import SecondOrderParams
+        from ocelot.cpbd.tm_utils import map_transform_with_offsets
+
         T = t_nnn(delta_length if delta_length is not None else self.l, 0. if self.l == 0 else self.angle / self.l,
                   self.k1, self.k2, energy)
         first_order_params = self.create_first_order_main_params(energy, delta_length)
@@ -127,12 +129,15 @@ class Magnet(Element):
         return SecondOrderParams(R, B, T, self.tilt, self.dx, self.dy)
 
     def create_kick_entrance_params(self) -> KickParams:
+        from ocelot.cpbd.tm_params.kick_params import KickParams
         return KickParams(dx=self.dx, dy=self.dy, angle=self.angle, tilt=self.tilt, k1=self.k1, k2=self.k2)
 
     def create_kick_main_params(self) -> KickParams:
+        from ocelot.cpbd.tm_params.kick_params import KickParams
         return KickParams(dx=self.dx, dy=self.dy, angle=self.angle, tilt=self.tilt, k1=self.k1, k2=self.k2)
 
     def create_kick_exit_params(self) -> KickParams:
+        from ocelot.cpbd.tm_params.kick_params import KickParams
         return KickParams(dx=self.dx, dy=self.dy, angle=self.angle, tilt=self.tilt, k1=self.k1, k2=self.k2)
 
     def get_transfer_geometry(self):
@@ -197,7 +202,6 @@ class Magnet(Element):
         # --- C) Apply TILT (roll about local s-axis) to rotate bending plane ---
         tilt = float(getattr(self, "tilt", 0.0))
         if tilt != 0.0:
-            from ocelot.common.math_op import get_tilt_matrix
             T = get_tilt_matrix(tilt)  # roll about s
 
             # Rotate the arc displacement into the tilted plane

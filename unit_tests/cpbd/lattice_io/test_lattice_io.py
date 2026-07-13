@@ -42,7 +42,12 @@ def test_lat2input_round_trips_bend_and_cavity_state():
     )
     lattice = MagneticLattice((bend, cavity))
 
-    namespace = _load_namespace(LatticeIO.lat2input(lattice))
+    lines = LatticeIO.lat2input(lattice)
+    text = "".join(lines)
+    assert "from ocelot import *" not in text
+    assert "from ocelot.cpbd.elements import Bend, Cavity" in text
+
+    namespace = _load_namespace(lines)
     rebuilt = MagneticLattice(namespace["cell"], method=lattice.method)
     rebuilt_bend, rebuilt_cavity = rebuilt.sequence
 

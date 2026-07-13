@@ -105,9 +105,48 @@ otherwise.
 
 ## Import Guidance
 
-Many tutorials use `from ocelot import *`; keep that public facade working.
-For new source code and tests, prefer explicit submodule imports so dependencies
-stay local to the workflow being used.
+`from ocelot import *` is a legacy tutorial style. Keep the public facade
+working for existing user scripts, but do not add it to new source code, tests,
+demos, generated lattice files, or documentation examples.
+
+For user-facing scripts and tutorials, prefer the lazy root facade through a
+namespace alias:
+
+```python
+import ocelot as ocl
+
+d = ocl.Drift(l=1.0)
+q = ocl.Quadrupole(l=0.3, k1=1.0)
+lat = ocl.MagneticLattice((d, q))
+tws = ocl.twiss(lat)
+```
+
+This gives users one namespace to remember without polluting the global
+namespace or forcing every root export to load at startup.
+
+For library code, tests, and agent-authored changes, prefer explicit submodule
+imports so ownership and dependencies are clear:
+
+```python
+from ocelot.cpbd.elements import Drift, Quadrupole
+from ocelot.cpbd.magnetic_lattice import MagneticLattice
+from ocelot.cpbd.optics import twiss
+from ocelot.cpbd.beam import Twiss, ParticleArray, generate_parray
+```
+
+The root `ocelot` package and these CPBD package facades are intentionally
+lazy-loaded:
+
+- `ocelot/__init__.py`
+- `ocelot/cpbd/beam/__init__.py`
+- `ocelot/cpbd/elements/__init__.py`
+- `ocelot/cpbd/tm_params/__init__.py`
+- `ocelot/cpbd/transformations/__init__.py`
+
+When adding a public facade name there, add it to `__all__` and the local
+lazy-export map instead of importing the implementation at module import time.
+This keeps `import ocelot`, narrow CPBD imports, and short-lived agent scripts
+fast while preserving tutorial-facing names.
 
 Avoid adding heavyweight imports to:
 
@@ -118,16 +157,18 @@ Avoid adding heavyweight imports to:
 Importing plotting, GUI, HDF5, pandas-heavy analysis, or optional acceleration
 libraries at package import time makes every simulation startup slower. Prefer
 function-local imports when the dependency is only needed by a specific feature.
+This also applies to SciPy subpackages and `numba`: defer them until the
+calculation that needs them.
 
 ## Testing
 
 Useful focused commands:
 
 ```bash
-pytest unit_tests/cpbd -q
-pytest unit_tests/cpbd/architecture_contract -q
-pytest unit_tests/ebeam_test/dba/dba_test.py -q
-pytest unit_tests/sr_test -q
+python -m pytest unit_tests/cpbd -q
+python -m pytest unit_tests/cpbd/architecture_contract -q
+python -m pytest unit_tests/ebeam_test/dba/dba_test.py -q
+python -m pytest unit_tests/sr_test -q
 ```
 
 For import-related changes, measure fresh interpreter startup, not repeated

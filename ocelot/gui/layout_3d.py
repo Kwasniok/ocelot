@@ -32,12 +32,12 @@ def _rot_y(angle: float) -> np.ndarray:
 
 def _get_roll_matrix(psi: float) -> np.ndarray:
     """
-    Roll around local s-axis. Uses ocelot.common.math_op.get_tilt_matrix if available,
+    Roll around local s-axis. Uses ocelot.common.geometry.get_tilt_matrix if available,
     otherwise falls back to a standard roll matrix around z(s)-axis in local coords
     (local axes are [x,y,s], so roll is around index 2).
     """
     try:
-        from ocelot.common.math_op import get_tilt_matrix  # type: ignore
+        from ocelot.common.geometry import get_tilt_matrix  # type: ignore
         return get_tilt_matrix(psi)
     except Exception:
         c, s = np.cos(psi), np.sin(psi)

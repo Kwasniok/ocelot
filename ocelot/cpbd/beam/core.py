@@ -1,13 +1,11 @@
+from __future__ import annotations
+
 import numpy as np
-import pandas as pd
 import warnings
 from typing import Iterable
 import ocelot.common.globals as glb
-from scipy.special import factorial
-from scipy.signal import savgol_filter
 from ocelot.common.math_op import find_nearest_idx
 from ocelot.common.ocelog import *
-from ocelot.cpbd.reswake import pipe_wake
 import copy
 
 _logger = logging.getLogger(__name__)
@@ -328,6 +326,8 @@ class Twiss:
 
     def to_series(self) -> pd.Series:
         """Return this Twiss instance as an equivalent Pandas Series instance."""
+        import pandas as pd
+
         keys = [
             'emit_x', 'emit_y', 'emit_xn', 'emit_yn', 'eigemit_1', 'eigemit_2',
             'beta_x', 'beta_y', 'alpha_x', 'alpha_y',
@@ -360,6 +360,8 @@ def twiss_iterable_to_df(twisses: Iterable[Twiss]) -> pd.DataFrame:
 
     :param twisses: iterable of twisses to be converted to a pandas DataFrame.
     """
+    import pandas as pd
+
     return pd.DataFrame(data=(t.to_series() for t in twisses))
 
 
@@ -595,6 +597,8 @@ class BeamArray(Beam):
             self.ds = dsm
 
         def smear(self, sw):
+            from scipy.signal import savgol_filter
+
             _logger.debug('smearing the beam by {:.2e} m'.format(sw))
             self.equidist()
             sn = (sw / self.ds).astype(int)
@@ -690,6 +694,8 @@ class BeamArray(Beam):
                 self.E += (self.s - s0) ** order * chirp * E_center * 1e6
 
         def add_chirp_poly(self, coeff, s0=None):
+            from scipy.special import factorial
+
             '''
             The method adds a polynomial energy chirp to the beam object.
 
@@ -742,6 +748,8 @@ class BeamArray(Beam):
 
         def add_wake(self, tube_radius=5e-3, tube_len=1, conductivity=3.66e+7, tau=7.1e-15, roughness=600e-9,
                      d_oxid=5e-9):
+            from ocelot.cpbd.reswake import pipe_wake
+
             self.eloss = pipe_wake(self.s, self.I, tube_radius, tube_len, conductivity, tau, roughness, d_oxid)[1][1][
                 ::-1]
 

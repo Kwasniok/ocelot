@@ -40,6 +40,37 @@ To explore tutorials, visit:
 👉 [**Tutorial Overview**](https://www.ocelot-collab.com/docs/tutorial/intro)
 👉 [**Student-Friendly Introduction**](https://www.ocelot-collab.com/docs/tutorial/tutorial-beam-dynamics/for_students)
 
+## Import and Startup Notes
+
+Legacy tutorial code using `from ocelot import *` remains supported, but it is
+not recommended for new scripts, tests, demos, or generated lattice files.
+
+For user scripts and tutorials, prefer:
+
+```python
+import ocelot as ocl
+
+d = ocl.Drift(l=1.0)
+q = ocl.Quadrupole(l=0.3, k1=1.0)
+lat = ocl.MagneticLattice((d, q))
+tws = ocl.twiss(lat)
+```
+
+This keeps one memorable namespace while avoiding star-import side effects. For
+library code, tests, and agent-authored changes, prefer explicit imports from
+the submodule that owns the API:
+
+```python
+from ocelot.cpbd.elements import Drift, Quadrupole
+from ocelot.cpbd.magnetic_lattice import MagneticLattice
+from ocelot.cpbd.optics import twiss
+from ocelot.cpbd.beam import Twiss, ParticleArray, generate_parray
+```
+
+The root facade is curated and lazy-loaded, so short-lived scripts can start
+quickly without importing plotting, radiation, pandas, SciPy, or optional
+acceleration modules until those features are actually used.
+
 ---
 
 ## Core Modules & API Reference

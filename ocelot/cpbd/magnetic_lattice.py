@@ -5,18 +5,11 @@ from ocelot.cpbd.elements.element import Element
 from ocelot.cpbd.elements.marker import Marker
 from ocelot.cpbd.elements.drift import Drift
 from ocelot.cpbd.elements.monitor import Monitor
-from ocelot.cpbd.elements.undulator import Undulator
 from ocelot.cpbd.elements.unknown_element import UnknownElement
 from ocelot.cpbd.elements.matrix import Matrix
-from ocelot.cpbd.elements.bend import Bend
-from ocelot.cpbd.elements.sbend import SBend
-from ocelot.cpbd.elements.rbend import RBend
-from ocelot.cpbd.latticeIO import LatticeIO
 from ocelot.cpbd.transformations.transfer_map import TransferMap
-from ocelot.cpbd.optics import lattice_transfer_map, periodic_twiss
 from ocelot.cpbd.tm_utils import transfer_maps_mult
 from ocelot.common.globals import m_e_GeV
-from ocelot.cpbd.beam import Twiss
 
 import logging
 import re
@@ -271,7 +264,7 @@ class MagneticLattice:
     def update_transfer_maps(self):
         for i, element in enumerate(self.sequence):
             # TODO: This belongs to the Element Undulator
-            if element.__class__ == Undulator:
+            if element.__class__.__name__ == "Undulator":
                 if element.field_file is not None:
                     element.l = element.field_map.l * element.field_map.field_file_rep
                     if element.field_map.units == "mm":
@@ -343,6 +336,8 @@ class MagneticLattice:
         Returns:
             None
         """
+        from ocelot.cpbd.latticeIO import LatticeIO
+
         twiss0 = LatticeIO._resolve_twiss0_alias(twiss0, kwargs, "save_as_py_file")
         LatticeIO.save_lattice(self, twiss0=twiss0, file_name=file_name, remove_rep_drifts=remove_rep_drifts,
                                power_supply=power_supply)
@@ -402,7 +397,7 @@ class MagneticLattice:
         # Initial Matrices
         M_theta = np.array([[np.cos(theta0), 0, np.sin(theta0)], [0, 1, 0], [-np.sin(theta0), 0, np.cos(theta0)]])
         M_phi = np.array([[1, 0, 0], [0, np.cos(phi0), np.sin(phi0)], [0, -np.sin(phi0), np.cos(phi0)]])
-        from ocelot.common.math_op import get_tilt_matrix
+        from ocelot.common.geometry import get_tilt_matrix
         M_psi = get_tilt_matrix(psi0)
 
         W = M_theta @ M_phi @ M_psi
@@ -557,6 +552,9 @@ class MagneticLattice:
         return lines
 
     def periodic_twiss(self, tws=None):
+        from ocelot.cpbd.beam.core import Twiss
+        from ocelot.cpbd.optics import periodic_twiss
+
         tws = Twiss(tws)
         R = self.transfer_maps(energy=tws.E)[1]
         tw_periodic = periodic_twiss(tws, R)

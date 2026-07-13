@@ -1,10 +1,32 @@
 import inspect
 from numbers import Number
 
-import numpy as np
 
-from ocelot.cpbd.beam import Beam, Twiss
-from ocelot.cpbd.elements import *
+_ELEMENT_IMPORT_ORDER = (
+    'UnknownElement',
+    'Aperture',
+    'Bend',
+    'Cavity',
+    'Drift',
+    'Element',
+    'Hcor',
+    'Marker',
+    'Matrix',
+    'Monitor',
+    'Multipole',
+    'Octupole',
+    'Pulse',
+    'Quadrupole',
+    'RBend',
+    'SBend',
+    'Sextupole',
+    'Solenoid',
+    'TDCavity',
+    'TWCavity',
+    'Undulator',
+    'Vcor',
+    'XYQuadrupole',
+)
 
 
 class LatticeIO:
@@ -88,10 +110,15 @@ class LatticeIO:
         """
         twiss0 = LatticeIO._resolve_twiss0_alias(twiss0, kwargs, "lat2input")
 
-        lines = ['from ocelot import * \n']
+        include_twiss = False
+        if twiss0 is not None:
+            from ocelot.cpbd.beam.core import Twiss
+            include_twiss = isinstance(twiss0, Twiss)
+
+        lines = LatticeIO._import_lines(lattice, include_twiss=include_twiss)
 
         # prepare initial Twiss parameters
-        if twiss0 is not None and isinstance(twiss0, Twiss):
+        if include_twiss:
             lines.append('\n#Initial Twiss parameters\n')
             lines.extend(LatticeIO.twiss2input(twiss0))
 
@@ -104,6 +131,43 @@ class LatticeIO:
         lines.extend(LatticeIO.cell2input(lattice, True))
 
         lines.append('\n')
+
+        return lines
+
+    @staticmethod
+    def _import_lines(lattice, include_twiss=False):
+        """
+        Return explicit imports needed by the generated lattice file.
+
+        The generated file should not use ``from ocelot import *`` because that
+        forces the full legacy facade to load. Known Ocelot element wrappers are
+        imported from ``ocelot.cpbd.elements``; custom element classes are
+        imported from their defining module when possible.
+        """
+        elements = LatticeIO._unique_sequence_elements(lattice.sequence)
+        element_types = {element.__class__.__name__ for element in elements}
+
+        lines = []
+        known_elements = [name for name in _ELEMENT_IMPORT_ORDER if name in element_types]
+        if known_elements:
+            lines.append('from ocelot.cpbd.elements import ' + ', '.join(known_elements) + '\n')
+
+        custom_imports = []
+        known_element_set = set(_ELEMENT_IMPORT_ORDER)
+        for element in elements:
+            cls = element.__class__
+            if cls.__name__ in known_element_set:
+                continue
+            module_name = cls.__module__
+            if module_name == '__main__':
+                continue
+            custom_imports.append((module_name, cls.__name__))
+
+        for module_name, class_name in sorted(set(custom_imports)):
+            lines.append(f'from {module_name} import {class_name}\n')
+
+        if include_twiss:
+            lines.append('from ocelot.cpbd.beam import Twiss\n')
 
         return lines
 
@@ -131,6 +195,8 @@ class LatticeIO:
         :param twiss: Input twiss
         :return: A string that contains Twiss parameter in a python readable format
         """
+        from ocelot.cpbd.beam.core import Twiss
+
         lines = []
         tws_ref = Twiss()
         lines.append('twiss0 = Twiss()\n')
@@ -141,6 +207,8 @@ class LatticeIO:
 
     @staticmethod
     def beam2input(beam):
+        from ocelot.cpbd.beam.core import Beam
+
         lines = []
         beam_ref = Beam()
         lines.append('beam = Beam()\n')
@@ -213,6 +281,8 @@ class LatticeIO:
 
     @staticmethod
     def _write_power_supply_id(lattice, lines=[]):
+        from ocelot.cpbd.elements import Bend, Cavity, Octupole, Quadrupole, RBend, SBend, Sextupole
+
         quads = LatticeIO._find_obj_and_create_name(lattice, types=[Quadrupole])
         sexts = LatticeIO._find_obj_and_create_name(lattice, types=[Sextupole])
         octs = LatticeIO._find_obj_and_create_name(lattice, types=[Octupole])
@@ -317,6 +387,8 @@ class LatticeIO:
         :param element: input Element
         :return: A String that contains an matrix element in a python readable format
         """
+        import numpy as np
+
         for key in ("r", "t", "b"):
             value = getattr(element, key)
             if np.shape(value) == (6, 6):
@@ -357,6 +429,8 @@ class LatticeIO:
         :param element: input Element
         :return: A String that contains an element in a python readable format
         """
+        import numpy as np
+
         params = []
 
         element_type = element.__class__.__name__

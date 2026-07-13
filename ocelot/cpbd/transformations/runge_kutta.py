@@ -1,4 +1,3 @@
-from ocelot.cpbd.high_order import rk_field, rk_field_to_ocelot
 from ocelot.cpbd.transformations.transfer_map import TransferMap, TMTypes
 from ocelot.cpbd.elements.element import Element
 
@@ -49,6 +48,8 @@ class RungeKuttaGlobalTM(TransferMap):
         return self.create_tm_param_func(energy)
 
     def map_function(self, X, energy: float):
+        from ocelot.cpbd.high_order import rk_field
+
         params = self.get_params(energy)
         length = self.delta_length if self.delta_length is not None else self.length
         return rk_field(X, self.s_start, self.s_start + length, self.npoints, energy, params.mag_field, self.long_dynamics)
@@ -75,6 +76,8 @@ class RungeKuttaOcelotTM(RungeKuttaGlobalTM):
     the element exit.
     """
     def map_function(self, X, energy: float):
+        from ocelot.cpbd.high_order import rk_field_to_ocelot
+
         params = self.get_params(energy)
         length = self.delta_length if self.delta_length is not None else self.length
         return rk_field_to_ocelot(X, self.s_start, self.s_start + length, self.npoints, energy, params.mag_field, self.long_dynamics)

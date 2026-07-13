@@ -4,10 +4,6 @@ from typing import TypeVar
 
 import ocelot.common.globals as glb
 from ocelot.common.ocelog import *
-from . import analysis
-from . import beam_utils
-from . import noise
-from . import core
 
 _logger = logging.getLogger(__name__)
 
@@ -361,6 +357,7 @@ class ParticleArray:
         - Twiss
             The Twiss parameters computed from the filtered particle array.
         """
+        from . import analysis
         tws = analysis.get_envelope(self, tws_i=tws_i, bounds=bounds, slice=slice, auto_disp=auto_disp)
         return tws
 
@@ -376,6 +373,8 @@ class ParticleArray:
         :param filter_iter: 2, filter parameter in the func: simple_filter
         :return: Twiss
         """
+        from . import analysis
+        from . import core
         tws = core.Twiss()
         slice_params = analysis.global_slice_analysis(self, nparts_in_slice=nparts_in_slice, smooth_param=smooth_param,
                                              filter_base=filter_base, filter_iter=filter_iter)
@@ -405,6 +404,7 @@ class ParticleArray:
         :return: np.array(Nx2), where s = B[:, 0], I = B[:, 1]
         """
         if num_bins is None:
+            from . import analysis
             sigma = np.std(self.tau()) / 10.
             q0 = np.sum(self.q_array)
             relgamma = self.E / glb.m_e_GeV
@@ -412,6 +412,7 @@ class ParticleArray:
             v = relbeta * glb.speed_of_light
             B = analysis.s_to_cur(self.tau(), sigma, q0, v)
         else:
+            from . import analysis
             s, I = analysis.get_current(self, num_bins=num_bins)
             B = np.column_stack((s, I))
         return B
@@ -443,6 +444,7 @@ class ParticleArray:
         """
         if rng is None:
             rng = np.random.default_rng()
+        from . import noise
         tau = self.tau()
         if inv_cdf is None:
             inv_cdf = noise.make_inverse_cdf_from_samples(tau, bins=500)
@@ -474,6 +476,7 @@ class ParticleArray:
         """
         if rng is None:
             rng = np.random.default_rng()
+        from . import noise
 
         coord_map = {
             "x": (0, self.x().std()),
@@ -526,6 +529,7 @@ class ParticleArray:
         ParticleArray
             This particle array instance after matching.
         """
+        from . import beam_utils
         x_opt = [tws.alpha_x, tws.beta_x, tws.mux]
         y_opt = [tws.alpha_y, tws.beta_y, tws.muy]
         beam_utils.beam_matching(self, bounds, x_opt, y_opt, remove_offsets, slice)
@@ -565,4 +569,3 @@ class Particle:
     def multiply_with_tm(self, tm: 'TransferMap', length):
         tm.apply(self)
         return deepcopy(self)
-
