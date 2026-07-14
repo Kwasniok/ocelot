@@ -31,9 +31,21 @@ CRITICAL_DEMOS = (
 )
 
 VERSION_FILES = (
-    "setup.py",
-    "ocelot/__init__.py",
-    "conda-recipe/meta.yaml",
+    (
+        "pyproject.toml",
+        r"version\s*=\s*['\"][^'\"]+['\"]",
+        r"version = '{version}'"
+    ),
+    (
+        "ocelot/__init__.py",
+        r"__version__\s*=\s*['\"][^'\"]+['\"]",
+        r"__version__ = '{version}'",
+    ),
+    (
+       "conda-recipe/meta.yaml",
+        r'version:\s*"[^"]+"',
+        r'version: "{version}"',
+    ),
 )
 
 
@@ -86,31 +98,16 @@ def replace_once(path: Path, pattern: str, replacement: str, *, dry_run: bool) -
         path.write_text(new_text, encoding="utf-8")
 
 
-def update_versions(root: Path, version: str, *, dry_run: bool) -> None:
-    replace_once(
-        root / "setup.py",
-        r"version=['\"][^'\"]+['\"]",
-        f"version='{version}'",
-        dry_run=dry_run,
-    )
-    replace_once(
-        root / "ocelot/__init__.py",
-        r"__version__\s*=\s*['\"][^'\"]+['\"]",
-        f"__version__ = '{version}'",
-        dry_run=dry_run,
-    )
-    replace_once(
-        root / "conda-recipe/meta.yaml",
-        r'version:\s*"[^"]+"',
-        f'version: "{version}"',
-        dry_run=dry_run,
-    )
-    replace_once(
-        root / "conda-recipe/meta.yaml",
-        r"git_tag:\s*v[^\s]+",
-        f"git_tag: v{version}",
-        dry_run=dry_run,
-    )
+def update_versions(root: Path, args: argparse.Namespace) -> None:
+    for file, pattern, replacement in VERSION_FILES:
+        if not (root / file).exists():
+            raise SystemExit(f"Expected version file not found: {file}")
+        replace_once(
+            root / file,
+            pattern,
+            replacement.replace("{version}", args.version),
+            dry_run=args.dry_run,
+        )
 
 
 def release_env(root: Path) -> dict[str, str]:
@@ -264,7 +261,7 @@ def build_package(root: Path, args: argparse.Namespace, env: dict[str, str]) -> 
 def commit_release(root: Path, args: argparse.Namespace) -> None:
     if not args.commit:
         return
-    run(["git", "add", *VERSION_FILES, "CHANGELOG.md"], cwd=root, dry_run=args.dry_run)
+    run(["git", "add", *[file for file, _, _ in VERSION_FILES] + ["CHANGELOG.md"]], cwd=root, dry_run=args.dry_run)
     if args.dry_run:
         run(
             ["git", "commit", "-m", args.commit_message or f"Prepare OCELOT {args.version} release"],
@@ -379,7 +376,7 @@ def main() -> None:
         require_clean_worktree(root)
 
     env = release_env(root)
-    update_versions(root, args.version, dry_run=args.dry_run)
+    update_versions(root, args)
     run_tests(root, args, env)
     run_demos(root, args, env)
     build_package(root, args, env)
