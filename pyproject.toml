@@ -30,7 +30,9 @@ Repository = "https://github.com/ocelot-collab/ocelot"
 
 [project.optional-dependencies]
 docs = ["Sphinx", "alabaster", "sphinxcontrib-jsmath"]
-dev = ["pytest", "ipykernel", "ipywidgets", "nbconvert", "sympy", "imageio", "seaborn", "plotly"]
+openpmd = ["openpmd-api", "openpmd-viewer"]
+pmd = ["pmd-beamphysics"]
+dev = ["pytest", "ipykernel", "ipywidgets", "nbconvert", "sympy", "imageio", "seaborn", "plotly", "pmd-beamphysics", "openpmd-api", "openpmd-viewer"]
 
 [tool.setuptools]
 include-package-data = false
