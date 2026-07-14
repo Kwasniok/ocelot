@@ -110,10 +110,9 @@ Ocelot's core functionality is organized into key modules:
 
 ## We welcome feedback, contributions, and new ideas
 
-
-
 - [How to create a pull request](https://www.ocelot-collab.com/docs/docu/how-to/pull_request)
 - [How to add unit tests](https://www.ocelot-collab.com/docs/docu/how-to/unit_test)
 - [How to create your own Physics Process class](https://www.ocelot-collab.com/docs/docu/how-to/phys_proc)
+- [Scripts and Documentation for Developers](scripts)
 
 **Disclaimer:** The OCELOT code comes with absolutely NO warranty. The authors of the OCELOT do not take any responsibility for any damage to equipments or personnel injury that may result from the use of the code.
