@@ -19,11 +19,12 @@ import os
 import re
 import subprocess
 import sys
+import traceback
 import tempfile
 from pathlib import Path
 
 
-DEFAULT_DEMOS = (
+CRITICAL_DEMOS = (
     "demos/ebeam/rk_track.py",
     "demos/ebeam/dba.py",
     "demos/ebeam/dba_tracking.py",
@@ -46,11 +47,18 @@ def run(
     cwd: Path,
     dry_run: bool,
     env: dict[str, str] | None = None,
+    supress_stdout: bool = False,
 ) -> None:
     print("+ " + " ".join(command))
     if dry_run:
         return
-    subprocess.run(command, cwd=cwd, env=env, check=True)
+    subprocess.run(
+        command,
+        cwd=cwd,
+        env=env,
+        check=True,
+        stdout=subprocess.DEVNULL if supress_stdout else None,
+    )
 
 
 def capture(command: list[str], *, cwd: Path) -> str:
@@ -107,6 +115,7 @@ def update_versions(root: Path, version: str, *, dry_run: bool) -> None:
 
 def release_env(root: Path) -> dict[str, str]:
     env = os.environ.copy()
+    # Set MPLBACKEND to Agg to prevent matplotlib from trying to open a window and blocking the execution of the script until manual intervention.
     env.setdefault("MPLBACKEND", "Agg")
     env["PYTHONPATH"] = (
         str(root)
@@ -120,20 +129,96 @@ def run_tests(root: Path, args: argparse.Namespace, env: dict[str, str]) -> None
     if args.skip_tests:
         print("skip tests")
         return
-    run([sys.executable, "-m", "pytest", args.tests], cwd=root, dry_run=args.dry_run, env=env)
+    try:
+        run([sys.executable, "-m", "pytest", args.tests], cwd=root, dry_run=args.dry_run, env=env)
+    except subprocess.CalledProcessError as e:
+        print("WARNING: Some tests failed.")
+        promt_continue()
 
 
 def run_demos(root: Path, args: argparse.Namespace, env: dict[str, str]) -> None:
     if args.skip_demos:
         print("skip demos")
         return
-    demos = args.demo or list(DEFAULT_DEMOS)
+    
+    if args.critical_demos_only:
+        demos = CRITICAL_DEMOS
+    else:
+        demos = args.demo or get_all_demos(root)
+
+    cwd = root / "tmp"
+    cwd.mkdir(parents=True, exist_ok=True)
+
+    counters = {
+        "script_success": 0,
+        "script_total": 0,
+        "notebook_success": 0,
+        "notebook_total": 0,
+    }
     for demo in demos:
+
         demo_path = root / demo
         if not demo_path.exists():
             raise SystemExit(f"Demo not found: {demo}")
-        run([sys.executable, demo], cwd=root, dry_run=args.dry_run, env=env)
+        
+        if demo_path.suffix == ".py":
+            kind = "script"
+            cmd = [sys.executable, str(demo_path)]
 
+        if demo_path.suffix == ".ipynb":
+            kind = "notebook"
+            cmd = [
+                sys.executable,
+                "-m",
+                "jupyter",
+                "nbconvert",
+                "--Application.log_level=ERROR",
+                "--to",
+                "notebook",
+                "--execute",
+                "--output-dir",
+                str(cwd),
+                str(demo_path),
+            ]
+        try:
+            counters[kind + "_total"] += 1
+            run(
+                cmd,
+                cwd=cwd,
+                dry_run=args.dry_run,
+                env=env,
+                supress_stdout=True
+            )
+            counters[kind + "_success"] += 1
+        except subprocess.CalledProcessError as e:
+            print(f"FAILED: Error encountered while executing {demo}:")
+            traceback.print_exception(type(e), e, e.__traceback__)
+
+    print("\n\nDemo execution summary:")
+    if counters["script_success"] < counters["script_total"] or counters["notebook_success"] < counters["notebook_total"]:
+        print(f"scripts executed successfully: {counters['script_success']}/{counters['script_total']}")
+        print(f"notebooks executed successfully: {counters['notebook_success']}/{counters['notebook_total']}")
+
+        print("\nWARNING: Some demos failed.")
+        promt_continue()
+    else:
+        print(f"All {counters['script_total']} scripts and {counters['notebook_total']} notebooks executed successfully.")
+
+def get_all_demos(root: Path) -> list[str]:
+    """Return a list of all demo scripts and notebooks in the demos directory, relative to the root directory."""
+    demos_dir = root / "demos"
+    if not demos_dir.exists():
+        raise SystemExit(f"Demos directory not found: {demos_dir}")
+    demo_files = []
+    for ext in (".py", ".ipynb"):
+        demo_files.extend(str(path.relative_to(root)) for path in demos_dir.rglob(f"*{ext}"))
+    return sorted(demo_files)
+
+def promt_continue() -> None:
+    """Prompt the user to continue, abort if the answer is not yes."""
+    input_str = input("Continue [Y/n]? ").strip().lower()
+    if input_str not in ("y", "yes", ""):
+        raise SystemExit("Abort.")
 
 def build_package(root: Path, args: argparse.Namespace, env: dict[str, str]) -> None:
     if args.skip_build:
@@ -253,7 +338,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--source-branch", default="dev")
     parser.add_argument("--target-branch", default="master")
     parser.add_argument("--tests", default="unit_tests", help="pytest target")
-    parser.add_argument("--demo", action="append", help="Demo script to run; can be passed more than once")
+    parser.add_argument("--demo", nargs="*", help="Explicit list of demo scripts and demo notebooks to run. If none are specified, all demos will be run automatically.")
+    parser.add_argument("--critical-demos-only", action="store_true", help="Run predefined critical demos only: " + ", ".join(CRITICAL_DEMOS) + ".")
     parser.add_argument("--dist-dir", default=str(default_dist), help="Package artifact output directory")
     parser.add_argument("--skip-tests", action="store_true")
     parser.add_argument("--skip-demos", action="store_true")
