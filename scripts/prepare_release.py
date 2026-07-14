@@ -261,6 +261,10 @@ def build_package(root: Path, args: argparse.Namespace, env: dict[str, str]) -> 
 def commit_release(root: Path, args: argparse.Namespace) -> None:
     if not args.commit:
         return
+    
+    print("Did you remember to update the CHANGELOG.md file?")
+    promt_continue()
+    
     run(["git", "add", *[file for file, _, _ in VERSION_FILES] + ["CHANGELOG.md"]], cwd=root, dry_run=args.dry_run)
     if args.dry_run:
         run(
